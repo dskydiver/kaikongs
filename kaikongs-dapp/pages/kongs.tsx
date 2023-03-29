@@ -1,88 +1,88 @@
 // @ts-nocheck
-import React from 'react'
-import { useState, useEffect, useRef } from 'react'
-import axios from 'axios'
-import Pagination from '../components/Pagination'
-import paginate from '../utls/paginate'
-import metadataJSON from '../public/_metadata_with_rarity.json'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import React from "react";
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import Pagination from "../components/Pagination";
+import paginate from "../utils/paginate";
+import metadataJSON from "../public/_metadata_with_rarity.json";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSearch,
   faList,
   faTableCells,
   faTableCellsLarge,
   faChart,
-} from '@fortawesome/free-solid-svg-icons'
-import { Dropdown } from 'flowbite-react'
+} from "@fortawesome/free-solid-svg-icons";
+import { Dropdown } from "flowbite-react";
 
-declare var window: any
+declare var window: any;
 
 const Holdings = () => {
-  const [avatar, setAvatar] = useState('/avatar.png')
-  const [wallet, setWallet] = useState()
-  const [balance, setBalance] = useState(0)
-  const [holdings, setHoldings] = useState([])
+  const [avatar, setAvatar] = useState("/avatar.png");
+  const [wallet, setWallet] = useState();
+  const [balance, setBalance] = useState(0);
+  const [holdings, setHoldings] = useState([]);
 
-  const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 20
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
-  const Web3 = require('web3')
-  const rpcURL = 'https://rpc-2.kardiachain.io'
-  const web3 = new Web3(Web3.givenProvider || rpcURL)
-  const contractABI = require('../contract-abi.json')
-  const contractAddress = '0xe83a69C8CD50d681895602ACdEC81F7847E70fde'
+  const Web3 = require("web3");
+  const rpcURL = "https://rpc-2.kardiachain.io";
+  const web3 = new Web3(Web3.givenProvider || rpcURL);
+  const contractABI = require("../utils/contract-abi.json");
+  const contractAddress = "0xe83a69C8CD50d681895602ACdEC81F7847E70fde";
 
-  let contract = new web3.eth.Contract(contractABI, contractAddress)
+  let contract = new web3.eth.Contract(contractABI, contractAddress);
 
-  const inputRef = useRef(null)
+  const inputRef = useRef(null);
 
   async function getCurrentWallet(): Promise<void> {
     if (window.ethereum) {
       const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts',
-      })
-      const account = accounts[0]
-      console.log(account)
-      setWallet(account)
+        method: "eth_requestAccounts",
+      });
+      const account = accounts[0];
+      console.log(account);
+      setWallet(account);
     }
   }
 
   const walletListener = () => {
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        console.log(accounts[0])
-        setWallet(accounts[0])
-      })
+      window.ethereum.on("accountsChanged", (accounts) => {
+        console.log(accounts[0]);
+        setWallet(accounts[0]);
+      });
     }
-  }
+  };
 
   useEffect(() => {
-    getCurrentWallet()
-    walletListener()
-  }, [])
+    getCurrentWallet();
+    walletListener();
+  }, []);
 
   useEffect(() => {
-    fetchBalance()
+    fetchBalance();
     if (wallet) {
-      console.log(process.env.NEXT_PUBLIC_FILEBASE_BUCKET_NAME)
+      console.log(process.env.NEXT_PUBLIC_FILEBASE_PROFILE_BUCKET_NAME);
       axios
         .get(
-          `${process.env.NEXT_PUBLIC_FILEBASE_ENDPOINT}${process.env.NEXT_PUBLIC_FILEBASE_BUCKET_NAME}/profile/${wallet}`,
+          `${process.env.NEXT_PUBLIC_FILEBASE_S3_ENDPOINT}${process.env.NEXT_PUBLIC_FILEBASE_PROFILE_BUCKET_NAME}/profile/${wallet}`
         )
         .then(() => {
           setAvatar(
-            `${process.env.NEXT_PUBLIC_FILEBASE_ENDPOINT}${process.env.NEXT_PUBLIC_FILEBASE_BUCKET_NAME}/profile/${wallet}`,
-          )
+            `${process.env.NEXT_PUBLIC_FILEBASE_S3_ENDPOINT}${process.env.NEXT_PUBLIC_FILEBASE_PROFILE_BUCKET_NAME}/profile/${wallet}`
+          );
         })
         .catch((err) => {
-          console.log(err)
-        })
+          console.log(err);
+        });
     }
-  }, [wallet])
+  }, [wallet]);
 
   useEffect(() => {
-    fetchNFTs()
-  }, [balance])
+    fetchNFTs();
+  }, [balance]);
 
   // useEffect(() => {
   //   console.log(balance);
@@ -95,42 +95,42 @@ const Holdings = () => {
   const connectWallet = async () => {
     if (window.ethereum) {
       const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts',
-      })
-      const account = accounts[0]
-      setWallet(account)
+        method: "eth_requestAccounts",
+      });
+      const account = accounts[0];
+      setWallet(account);
     } else {
-      window.open('https://metamask.io/', '_blank')
+      window.open("https://metamask.io/", "_blank");
     }
-  }
+  };
 
   const fetchBalance = async () => {
     if (wallet) {
-      const bal = await contract.methods.balanceOf(wallet).call()
-      setBalance(bal)
+      const bal = await contract.methods.balanceOf(wallet).call();
+      setBalance(bal);
     }
-  }
+  };
 
   const fetchNFTs = async () => {
     for (let i = 0; i < balance; i++) {
       const tokenID = await contract.methods
         .tokenOfOwnerByIndex(wallet, i)
-        .call()
+        .call();
 
-      const tokenMetadataURI = `https://kai-kongs.myfilebase.com/ipfs/bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/${tokenID}.json`
+      const tokenMetadataURI = `https://kai-kongs.myfilebase.com/ipfs/bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/${tokenID}.json`;
 
       const tokenMetadata = await fetch(tokenMetadataURI).then((response) =>
-        response.json(),
-      )
-      let tokenImage = tokenMetadata.image
+        response.json()
+      );
+      let tokenImage = tokenMetadata.image;
       tokenImage = `https://kai-kongs.myfilebase.com/ipfs/${
-        tokenImage.split('ipfs://')[1]
-      }`
-      const tokenName = tokenMetadata.name
+        tokenImage.split("ipfs://")[1]
+      }`;
+      const tokenName = tokenMetadata.name;
 
       const nft = metadataJSON.find((nft) => {
-        return +nft.edition === +tokenMetadata.name.split('#')[1]
-      })
+        return +nft.edition === +tokenMetadata.name.split("#")[1];
+      });
 
       // console.log(tokenName);
       setHoldings((holdings) => [
@@ -142,30 +142,30 @@ const Holdings = () => {
           token: tokenID,
           rank: nft.rank,
         },
-      ])
+      ]);
     }
-  }
+  };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page)
-  }
+    setCurrentPage(page);
+  };
 
   const handleFileChange = ({ target }) => {
-    console.log('clicked')
-    const fileReader = new FileReader()
+    console.log("clicked");
+    const fileReader = new FileReader();
 
-    fileReader.readAsDataURL(target.files[0])
+    fileReader.readAsDataURL(target.files[0]);
     fileReader.onload = async (e) => {
-      console.log('loaded')
-      setAvatar(e.target.result)
-      const data = new FormData()
-      data.append('file', target.files[0])
-      data.append('address', wallet)
-      await axios.post('/api/upload', data)
-    }
-  }
+      console.log("loaded");
+      setAvatar(e.target.result);
+      const data = new FormData();
+      data.append("file", target.files[0]);
+      data.append("address", wallet);
+      await axios.post("/api/upload", data);
+    };
+  };
 
-  const paginateHoldings = paginate(holdings, currentPage, pageSize)
+  const paginateHoldings = paginate(holdings, currentPage, pageSize);
 
   return (
     <div className="w-full min-h-screen holdings__wrapper">
@@ -197,7 +197,7 @@ const Holdings = () => {
           <div className="mb-4">
             <p className="text-sm md:text-base">
               {wallet.slice(0, 6)}
-              {'...'}
+              {"..."}
               {wallet.slice(-4)}
             </p>
           </div>
@@ -219,12 +219,12 @@ const Holdings = () => {
               onClick={connectWallet}
               className="w-full flex justify-center gap-x-4 items-center bg-[#44912d] text-white hover:bg-[sky-700] font-bold py-2 px-4 rounded-lg inline-flex"
             >
-              {' '}
+              {" "}
               Connect <img
                 src="/metamask.png"
                 width="30"
                 alt="metamask icon"
-              />{' '}
+              />{" "}
             </button>
           )}
         </div>
@@ -325,7 +325,7 @@ const Holdings = () => {
                 className="text-black bg-white focus:outline-none font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                 type="button"
               >
-                Dropdown button{' '}
+                Dropdown button{" "}
                 <svg
                   className="w-4 h-4 ml-2"
                   aria-hidden="true"
@@ -420,7 +420,7 @@ const Holdings = () => {
           </div>
         </div>
 
-        <div className='mt-3' id="myTabContent">
+        <div className="mt-3" id="myTabContent">
           <div
             className="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border-[1px]"
             id="profile"
@@ -428,7 +428,11 @@ const Holdings = () => {
             aria-labelledby="profile-tab"
           >
             <p className="text-center py-5">No items found for this search</p>
-            <p className='text-center'><button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800'>Back to all items</button></p>
+            <p className="text-center">
+              <button className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                Back to all items
+              </button>
+            </p>
           </div>
           <div
             className="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border-[1px]"
@@ -437,7 +441,11 @@ const Holdings = () => {
             aria-labelledby="dashboard-tab"
           >
             <p className="text-center py-5">No items found for this search</p>
-            <p className='text-center'><button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800'>Back to all items</button></p>
+            <p className="text-center">
+              <button className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                Back to all items
+              </button>
+            </p>
           </div>
           <div
             className="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border-[1px]"
@@ -446,7 +454,11 @@ const Holdings = () => {
             aria-labelledby="settings-tab"
           >
             <p className="text-center py-5">No items found for this search</p>
-            <p className='text-center'><button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800'>Back to all items</button></p>
+            <p className="text-center">
+              <button className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                Back to all items
+              </button>
+            </p>
           </div>
           <div
             className="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border-[1px]"
@@ -455,7 +467,11 @@ const Holdings = () => {
             aria-labelledby="contacts-tab"
           >
             <p className="text-center py-5">No items found for this search</p>
-            <p className='text-center'><button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800'>Back to all items</button></p>
+            <p className="text-center">
+              <button className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                Back to all items
+              </button>
+            </p>
           </div>
         </div>
         {/* {wallet && (
@@ -503,7 +519,7 @@ const Holdings = () => {
         /> */}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Holdings
+export default Holdings;

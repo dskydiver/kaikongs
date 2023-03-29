@@ -5,7 +5,17 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-}
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "ipfs.filebase.io",
+        port: "",
+        pathname: "/ipfs/**",
+      },
+    ],
+  },
+};
 
 
 
