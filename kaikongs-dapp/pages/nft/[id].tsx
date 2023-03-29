@@ -2,6 +2,7 @@ import React from "react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useQuery, gql } from "@apollo/client";
+import { ethers } from 'ethers';
 import { at } from "lodash";
 import { BsArrowDown } from "react-icons/bs";
 import { type } from "os";
@@ -56,7 +57,7 @@ const Nft = () => {
   const [loading, setLoading] = useState(_loading);
   const [error, setError] = useState(_error);
   const [data, setData] = useState(_data);
-  const [wallet, setWallet] = useState();
+  const [wallet, setWallet] = useState('');
   // const [nftTraits, setnftTraits] = useState([]);
   // const [imageUrl, setImageUrl] = useState<any | null>(null);
   // const [tokeName, setTokenName] = useState();
@@ -72,21 +73,14 @@ const Nft = () => {
   // const [pageLoading, setPageLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  // const Web3 = require('web3');
-  // let web3 = new Web3(Web3.givenProvider);
-
-  const Web3 = require("web3");
-  const rpcURL = "https://rpc-2.kardiachain.io";
-  const web3 = new Web3(Web3.givenProvider || rpcURL);
-
   // marketplace
   const contractABI = require("../../utils/marketplace-contract-abi.json");
-  const contractAddress = "0xC595e0D9dd590c82F415c00A770755a5D3B626BC";
-  let marketplace = new web3.eth.Contract(contractABI, contractAddress);
+  const contractAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+  console.log(contractABI);
+  let marketplace = new ethers.Contract(contractABI, contractAddress);
+
   // nft
   const nftContractABI = require("../../utils/contract-abi.json");
-  const nftContractAddress = "0xe83a69C8CD50d681895602ACdEC81F7847E70fde";
-
 
   const [price, setPrice] = useState<any | null>(null);
   const [recipient, setRecipient] = useState<any | null>(null);
@@ -98,11 +92,11 @@ const Nft = () => {
 
   const connectWallet = async () => {
     if (window.ethereum) {
-      const accounts = await window.ethereum.request({
+      await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-      const account = accounts[0];
-      setWallet(account);
+      const provider = new ethers.JsonRpcProvider(window.ethereum)
+      setWallet((await provider.getSigner()).address);
     } else {
       window.open("https://metamask.io/", "_blank");
     }
@@ -110,12 +104,12 @@ const Nft = () => {
 
   async function getCurrentWallet(): Promise<void> {
     if (window.ethereum) {
-      const accounts = await window.ethereum.request({
+      await window.ethereum.request({
         method: "eth_accounts",
       });
-      const account = accounts[0];
+      const provider = new ethers.JsonRpcProvider(window.ethereum);
       // console.log(account);
-      setWallet(account);
+      setWallet((await provider.getSigner()).address);
     }
   }
 
@@ -132,16 +126,14 @@ const Nft = () => {
 
   const listSale = async () => {
     setIsLoading(true);
-    let nftCollectionAddress = data.nft.collection.address
-    let tokenId = data.nft.tokenID
+    let nftCollectionAddress = data.nft.collection.address;
+    let tokenId = data.nft.tokenID;
     if (price % 1 == 0 && price > 0) {
       try {
         // console.log(Web3.utils.toWei(`${price}`, 'ether'));
 
-        const tx = await marketplace.methods
-          .createSell(nftCollectionAddress, tokenId, price, wallet)
-          .send({ from: wallet });
-        await tx;
+        await ((await marketplace
+          .createSell(nftCollectionAddress, tokenId, price, wallet, { from: wallet})).wait())
 
         setIsLoading(false);
         location.reload();
@@ -160,21 +152,28 @@ const Nft = () => {
   };
 
   const buyItem = async () => {
-    setIsLoading(true);
+    // setIsLoading(true);
     let nftCollectionAddress = data.nft.collection.address;
     let tokenId = data.nft.tokenID;
-    try {
-      // console.log();
-      await marketplace.methods.buy(nftCollectionAddress, tokenId).send({
-        from: wallet,
-        value: web3.utils.toWei(`${data?.listNFT.price}`, "ether"),
-      });
-      location.reload();
-      setStatus({ message: "Purchase successful", type: "success" });
-    } catch (err) {
-      setStatus({ message: err.message, type: "error" });
-      setIsLoading(false);
-    }
+    console.log(nftCollectionAddress, wallet);
+    console.log(
+      await marketplace.getListedNFT(nftCollectionAddress, 2)
+    );
+    // try {
+    //   // console.log();
+    //   const tx = await marketplace.methods.buy(nftCollectionAddress, tokenId).send({
+    //     from: wallet,
+    //     value: data?.nft.listNFTs[0].price
+    //   });
+    //   await tx;
+    //   location.reload();
+    //   console.log('purchase success')
+    //   setStatus({ message: "Purchase successful", type: "success" });
+    // } catch (err) {
+    //   console.log(err)
+    //   setStatus({ message: err.message, type: "error" });
+    //   setIsLoading(false);
+    // }
     // "0x" + Web3.utils.toBN(Web3.utils.toWei(``, "ether")).toString(16)}
   };
 
@@ -183,10 +182,7 @@ const Nft = () => {
     let nftCollectionAddress = data.nft.collection.address;
     let tokenId = data.nft.tokenID;
     try {
-      const tx = await marketplace.methods
-        .cancelListedNFT(nftCollectionAddress, tokenId)
-        .send({ from: wallet });
-      await tx;
+      await((await marketplace.cancelListedNFT(nftCollectionAddress, tokenId, { from: wallet })).wait())
 
       location.reload();
       setStatus({ message: "Successfully removed listing", type: "success" });
@@ -199,12 +195,13 @@ const Nft = () => {
   const transferToken = async () => {
     setProcessing(true);
     let nftCollectionAddress = data.nft.collection.address;
-    let nftContract = new web3.eth.Contract(nftContractABI, nftCollectionAddress);
+    let nftContract = new ethers.Contract(
+      nftContractABI,
+      nftCollectionAddress
+    );
     try {
-      const tx = await nftContract.methods
-        .transferFrom(wallet, recipient, id)
-        .send({ from: wallet });
-      await tx;
+      await ((await nftContract.transferFrom(wallet, recipient, id, {from: wallet})).wait());
+
       location.reload();
       setStatus({ message: "Transfer Successful", type: "success" });
     } catch (err) {
