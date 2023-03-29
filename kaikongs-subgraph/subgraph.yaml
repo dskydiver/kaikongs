@@ -1,0 +1,90 @@
+specVersion: 0.0.5
+features:
+  - fullTextSearch
+  - ipfsOnEthereumContracts
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Marketplace
+    network: mainnet
+    source:
+      address: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+      abi: Marketplace
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - NFT
+        - User
+        - ListNFT
+        - BuyNFT
+        - ActionNFT
+        - OfferNFT
+      abis:
+        - name: Marketplace
+          file: ./abis/Marketplace.json
+      eventHandlers:
+        - event: ListedNFT(indexed address,indexed uint256,uint256,uint256,indexed address)
+          handler: handleListedNFT
+        - event: BoughtNFT(indexed address,indexed uint256,uint256,address,indexed address)
+          handler: handleBoughtNFT
+        - event: OfferredNFT(indexed address,indexed uint256,uint256,uint256,indexed address)
+          handler: handleOfferredNFT
+        - event: CanceledOfferredNFT(indexed address,indexed uint256,uint256,indexed address)
+          handler: handleCanceledNFT
+        - event: AcceptedNFT(indexed address,indexed uint256,uint256,address,indexed address)
+          handler: handleAcceptedNFT
+        - event: CreatedAuction(indexed address,indexed uint256,uint256,uint256,uint256,uint256,indexed address)
+          handler: handleCreatedAuction
+        - event: PlacedBid(indexed address,indexed uint256,uint256,indexed address)
+          handler: handlePlacedBid
+        - event: ResultedAuction(indexed address,indexed uint256,address,indexed address,uint256,address)
+          handler: handleResultedAuction
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: Factory
+    network: mainnet
+    source:
+      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      abi: Factory
+      startBlock: 0
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - NFTCollection
+      abis:
+        - name: Factory
+          file: ./abis/Factory.json
+        - name: Collection
+          file: ./abis/Collection.json
+      eventHandlers:
+        - event: CreatedNFTCollection(indexed address,indexed address)
+          handler: handleCreatedNFTCollection
+      file: ./src/mapping.ts
+templates:
+  - kind: ethereum
+    name: Collection
+    network: mainnet
+    source:
+      abi: Collection
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - NFT
+        - NFTCollection
+      abis:
+        - name: Collection
+          file: ./abis/Collection.json
+      eventHandlers:
+        - event: UpdatedRoyaltyFee(uint256)
+          handler: handleUpdatedRoyaltyFee
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/mapping.ts
