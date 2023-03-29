@@ -74,12 +74,14 @@ async function main() {
   // ).wait();
 
   await (
-    await marketplace.connect(user1).bulkBuy([nftAddress, nftAddress], [1, 2], {
-      value: ethers.utils.parseEther("7"),
+    await marketplace.connect(user1).buy(nftAddress, 1, {
+      value: ethers.utils.parseEther("3"),
     })
   ).wait();
 
+  console.log(await nft.balanceOf(marketplace.address))
   console.log(await nft.balanceOf(owner.address));
+  console.log(await nft.balanceOf(user1.address))
 }
 
 // We recommend this pattern to be able to use async/await everywhere

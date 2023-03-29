@@ -319,7 +319,7 @@ const Holdings = () => {
                   key={index}
                   className="group relative bg-gray-100 rounded-lg"
                 >
-                  <a href={`/nft/${listedNft.id}`}>
+                  <a href={`/nft/${listedNft.nft.id}`}>
                     <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
                       <Image
                         fill

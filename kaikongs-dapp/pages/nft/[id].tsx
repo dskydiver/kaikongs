@@ -6,34 +6,34 @@ import { at } from "lodash";
 import { BsArrowDown } from "react-icons/bs";
 import { type } from "os";
 import metadataJSON from "../../public/_metadata_with_rarity.json";
-import convertIPFSPath from '../../utils/convertIPFSPath';
+import convertIPFSPath from "../../utils/convertIPFSPath";
 
 declare var window: any;
 
-const ListedNftQuery = gql`
-  query ListedNft($id: ID) {
-    listNFT(id: $id) {
+const NftQuery = gql`
+  query nft($id: ID) {
+    nft(id: $id) {
       id
-      price
-      nft {
-        image
-        tokenURI
+      listNFTs(where: { sold: false }) {
+        sold
+        price
         id
-        owner {
-          id
-          address
-        }
-        description
-        dna
-        edition
         date
-        compiler
-        tokenID
-        name
       }
-      sold
+      image
+      tokenID
+      tokenURI
+      name
+      owner {
+        address
+        id
+      }
+      edition
+      dna
+      description
       date
-      seller {
+      compiler
+      collection {
         address
         id
       }
@@ -48,9 +48,9 @@ const Nft = () => {
     data: _data,
     loading: _loading,
     error: _error,
-  } = useQuery(ListedNftQuery, {
+  } = useQuery(NftQuery, {
     variables: {
-      id
+      id,
     },
   });
   const [loading, setLoading] = useState(_loading);
@@ -62,7 +62,7 @@ const Nft = () => {
   // const [tokeName, setTokenName] = useState();
   // const [tokenRank, setTokenRank] = useState();
 
-  // const [isListed, setIsListed] = useState();
+  const [isListed, setIsListed] = useState(true);
   // const [tokenPrice, setTokenPrice] = useState();
   // const [tokenOwner, setTokenOwner] = useState();
 
@@ -71,8 +71,6 @@ const Nft = () => {
 
   // const [pageLoading, setPageLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-
-  let tokenMetadata;
 
   // const Web3 = require('web3');
   // let web3 = new Web3(Web3.givenProvider);
@@ -89,7 +87,6 @@ const Nft = () => {
   const nftContractABI = require("../../utils/contract-abi.json");
   const nftContractAddress = "0xe83a69C8CD50d681895602ACdEC81F7847E70fde";
 
-  let nftContract = new web3.eth.Contract(nftContractABI, nftContractAddress);
 
   const [price, setPrice] = useState<any | null>(null);
   const [recipient, setRecipient] = useState<any | null>(null);
@@ -135,22 +132,14 @@ const Nft = () => {
 
   const listSale = async () => {
     setIsLoading(true);
+    let nftCollectionAddress = data.nft.collection.address
+    let tokenId = data.nft.tokenID
     if (price % 1 == 0 && price > 0) {
       try {
         // console.log(Web3.utils.toWei(`${price}`, 'ether'));
 
-        const isApproved = await nftContract.methods
-          .isApprovedForAll(wallet, contractAddress)
-          .call();
-
-        if (!isApproved) {
-          await nftContract.methods
-            .setApprovalForAll(contractAddress, true)
-            .send({ from: wallet });
-        }
-
         const tx = await marketplace.methods
-          .listMarketItem(nftContractAddress, id, price)
+          .createSell(nftCollectionAddress, tokenId, price, wallet)
           .send({ from: wallet });
         await tx;
 
@@ -172,9 +161,11 @@ const Nft = () => {
 
   const buyItem = async () => {
     setIsLoading(true);
+    let nftCollectionAddress = data.nft.collection.address;
+    let tokenId = data.nft.tokenID;
     try {
       // console.log();
-      await marketplace.methods.createMarketSale(nftContractAddress, id).send({
+      await marketplace.methods.buy(nftCollectionAddress, tokenId).send({
         from: wallet,
         value: web3.utils.toWei(`${data?.listNFT.price}`, "ether"),
       });
@@ -189,9 +180,11 @@ const Nft = () => {
 
   const removeListing = async () => {
     setIsLoading(true);
+    let nftCollectionAddress = data.nft.collection.address;
+    let tokenId = data.nft.tokenID;
     try {
       const tx = await marketplace.methods
-        .removeListing(id, nftContractAddress)
+        .cancelListedNFT(nftCollectionAddress, tokenId)
         .send({ from: wallet });
       await tx;
 
@@ -205,6 +198,8 @@ const Nft = () => {
 
   const transferToken = async () => {
     setProcessing(true);
+    let nftCollectionAddress = data.nft.collection.address;
+    let nftContract = new web3.eth.Contract(nftContractABI, nftCollectionAddress);
     try {
       const tx = await nftContract.methods
         .transferFrom(wallet, recipient, id)
@@ -218,93 +213,6 @@ const Nft = () => {
     }
   };
 
-  // const fetchMetadata = async () => {
-  //   let tokenMetadataURI = `https://kai-kongs.myfilebase.com/ipfs/bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/${id}.json`;
-  //   tokenMetadata = await fetch(tokenMetadataURI).then((response) =>
-  //     response.json()
-  //   );
-
-  //   const listingStatus = await marketplace.methods.isListed(id).call();
-  //   setIsListed(listingStatus);
-
-  //   const price = await marketplace.methods.getPrice(id).call();
-  //   setTokenPrice(price);
-
-  //   if (listingStatus == true) {
-  //     let owner = await marketplace.methods.getSeller(id).call();
-  //     owner = owner.toLowerCase();
-  //     setTokenOwner(owner);
-  //     console.log(wallet);
-  //     if (owner == wallet) {
-  //       setIsOwner(true);
-  //     }
-  //   } else {
-  //     let owner = await nftContract.methods.ownerOf(id).call();
-  //     console.log(owner);
-  //     console.log(wallet);
-  //     owner = owner.toLowerCase();
-  //     setTokenOwner(owner.toLowerCase());
-
-  //     if (owner == wallet) {
-  //       setIsOwner(true);
-  //     }
-  //   }
-
-  //   // if (listingStatus == true){
-  //   //     console.log(true);
-  //   //     const owner = await marketplace.methods.getSeller(id).call();
-  //   //     console.log(owner);
-
-  //   //     console.log(wallet)
-  //   // }
-
-  //   setTokenName(tokenMetadata.name);
-
-  //   const nft = metadataJSON.find(
-  //     (nft) => +nft.edition === +tokenMetadata.name.split("#")[1]
-  //   );
-  //   setTokenRank(nft.rank);
-
-  //   setnftTraits([]);
-
-  //   nft.attributes.map((attr: any) => {
-  //     setnftTraits((nftTraits) => [...nftTraits, attr]);
-  //   });
-
-  //   console.log("Atributes Set");
-
-  //   let img = tokenMetadata.image;
-  //   setImageUrl(
-  //     `https://kai-kongs.myfilebase.com/ipfs/${img.split("ipfs://")[1]}`
-  //   );
-  //   setPageLoading(false);
-  // };
-
-  // useEffect(() => {
-  //   if (id != null) {
-  //     fetchMetadata();
-  //   }
-  // }, [id, wallet]);
-
-  // // useEffect(() => {
-  // //     console.log(isOwner)
-  // // }, [isOwner])
-
-  // // useEffect(() => {
-  // //     nftTraits.map(atrr => {
-  // //         console.log(attr);
-  // //     })
-  // // }, [nftTraits])
-
-  // const sentenceCase = (str) => {
-  //   if (str === null || str === "") return false;
-  //   else str = str.toString();
-
-  //   return str.replace(/\w\S*/g, function (txt) {
-  //     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-  //   });
-  // }
-
   useEffect(() => {
     getCurrentWallet();
     walletListener();
@@ -312,14 +220,13 @@ const Nft = () => {
 
   useEffect(() => {
     if (!loading && !error) {
-      if (wallet === data.listNFT.nft.owner.address) {
-        setIsOwner(true)
-      }
-      else {
-        setIsOwner(false)
+      if (wallet === data?.nft?.owner.address) {
+        setIsOwner(true);
+      } else {
+        setIsOwner(false);
       }
     }
-  }, [wallet, loading, error, data?.listNFT.nft.owner.address])
+  }, [wallet, loading, error, data?.nft?.owner.address]);
 
   useEffect(() => {
     setData(_data);
@@ -333,19 +240,28 @@ const Nft = () => {
     setError(_error);
   }, [_error]);
 
+  useEffect(() => {
+    if (data?.nft?.listNFTs.length) {
+      setIsListed(true);
+    } else {
+      setIsListed(false);
+    }
+  }, [data?.nft?.listNFTs]);
+
   if (loading) {
     return (
       <div className="w-full min-h-screen flex justify-center items-center">
         <span className="loader"></span>
       </div>
     );
-  } 
+  }
   if (error) {
-    console.log(error)
-    return null
+    console.log(error);
+    return null;
   }
 
-  const listNFT = data.listNFT;
+  const nft = data.nft;
+  if (!nft) return null;
 
   return (
     <section className="text-gray-600 body-font overflow-hidden">
@@ -353,36 +269,39 @@ const Nft = () => {
         <div className="lg:w-4/5 mx-auto flex flex-wrap">
           <img
             className="lg:w-1/2 w-full h-full object-cover object-center rounded"
-            src={convertIPFSPath(listNFT.nft.image)}
+            src={convertIPFSPath(nft.image)}
           />
           <div className="lg:w-1/2 w-full lg:pl-10 lg:py-6 mt-6 lg:mt-0">
             <div className="flex gap-4 items-center">
               <h1 className="text-gray-900 text-3xl title-font font-medium mb-1">
-                {listNFT.nft.name}
+                {nft.name}
               </h1>
             </div>
             <span className="text-sm">
-              owned by {`${listNFT.nft.owner.address}`.slice(0, 5) + ".."}
+              owned by {`${nft.owner.address}`.slice(0, 5) + ".."}
             </span>
 
             <p className="text-lg mt-4 text-black">
               There are 10,000 Kongs running rampant on the KardiaChain Network!
             </p>
 
-         
+            {isListed && nft.listNFTs.length ? (
               <div className="my-6">
                 <h2 className="text-black text-2xl flex justify-center items-center gap-2 w-fit">
-                  {listNFT.price} KAI{" "}
+                  {nft.listNFTs[0].price} KAI{" "}
                   <span className="p-1 bg-gray-100 text-xs rounded-lg">
                     On Sale
                   </span>{" "}
                 </h2>
               </div>
-
+            ) : (
+              <></>
+            )}
 
             <div className="nft__controlls mt-6">
               <div className="flex gap-2">
-                {!wallet ? (
+                {!isListed ? (
+                  !wallet ? (
                     <button
                       onClick={connectWallet}
                       className="w-full flex justify-center gap-x-4 items-center bg-[#44912d] text-white hover:bg-[sky-700] font-bold py-2 px-4 rounded-lg inline-flex"
@@ -457,9 +376,12 @@ const Nft = () => {
                       </div>
                     )
                   )
-                }
+                ) : (
+                  <></>
+                )}
 
-                {!wallet ? (
+                {isListed &&
+                  (!wallet ? (
                     <button
                       onClick={connectWallet}
                       className="w-full flex justify-center gap-x-4 items-center bg-[#44912d] text-white hover:bg-[sky-700] font-bold py-2 px-4 rounded-lg inline-flex"
@@ -488,7 +410,7 @@ const Nft = () => {
                     >
                       Remove Listing
                     </button>
-                  )}
+                  ))}
               </div>
             </div>
 
@@ -520,7 +442,6 @@ const Nft = () => {
       </div>
     </section>
   );
-
 };
 
 export default Nft;
