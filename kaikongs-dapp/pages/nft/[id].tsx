@@ -2,12 +2,15 @@ import React from "react";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useQuery, gql } from "@apollo/client";
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 import { at } from "lodash";
 import { BsArrowDown } from "react-icons/bs";
 import { type } from "os";
 import metadataJSON from "../../public/_metadata_with_rarity.json";
 import convertIPFSPath from "../../utils/convertIPFSPath";
+import marketplaceABI from "../../utils/marketplace-contract-abi.json";
+import nftContractABI from "../../utils/contract-abi.json";
+import compareAddress from "../../utils/compareAddress";
 
 declare var window: any;
 
@@ -20,6 +23,9 @@ const NftQuery = gql`
         price
         id
         date
+        seller {
+          address
+        }
       }
       image
       tokenID
@@ -57,7 +63,7 @@ const Nft = () => {
   const [loading, setLoading] = useState(_loading);
   const [error, setError] = useState(_error);
   const [data, setData] = useState(_data);
-  const [wallet, setWallet] = useState('');
+  const [wallet, setWallet] = useState("");
   // const [nftTraits, setnftTraits] = useState([]);
   // const [imageUrl, setImageUrl] = useState<any | null>(null);
   // const [tokeName, setTokenName] = useState();
@@ -73,15 +79,6 @@ const Nft = () => {
   // const [pageLoading, setPageLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
 
-  // marketplace
-  const contractABI = require("../../utils/marketplace-contract-abi.json");
-  const contractAddress = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
-  console.log(contractABI);
-  let marketplace = new ethers.Contract(contractABI, contractAddress);
-
-  // nft
-  const nftContractABI = require("../../utils/contract-abi.json");
-
   const [price, setPrice] = useState<any | null>(null);
   const [recipient, setRecipient] = useState<any | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -95,8 +92,8 @@ const Nft = () => {
       await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-      const provider = new ethers.JsonRpcProvider(window.ethereum)
-      setWallet((await provider.getSigner()).address);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      setWallet(await provider.getSigner().getAddress());
     } else {
       window.open("https://metamask.io/", "_blank");
     }
@@ -107,9 +104,9 @@ const Nft = () => {
       await window.ethereum.request({
         method: "eth_accounts",
       });
-      const provider = new ethers.JsonRpcProvider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
       // console.log(account);
-      setWallet((await provider.getSigner()).address);
+      setWallet(await provider.getSigner().getAddress());
     }
   }
 
@@ -126,14 +123,44 @@ const Nft = () => {
 
   const listSale = async () => {
     setIsLoading(true);
-    let nftCollectionAddress = data.nft.collection.address;
+    let provider = new ethers.providers.Web3Provider(window.ethereum);
+    let marketplace = new ethers.Contract(
+      process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
+      marketplaceABI,
+      provider.getSigner()
+    );
+    let nftContractAddress = data.nft.collection.address;
     let tokenId = data.nft.tokenID;
+
+    let nftContract = new ethers.Contract(nftContractAddress, nftContractABI, provider.getSigner());
+    const isApproved = await nftContract.isApprovedForAll(
+      wallet,
+      process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
+    );
+      console.log('approved?', isApproved)
+    if (!isApproved) {
+      await(
+        await nftContract.setApprovalForAll(
+          process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
+          true,
+          { from: wallet }
+        )
+      ).wait();
+    }
+
     if (price % 1 == 0 && price > 0) {
       try {
         // console.log(Web3.utils.toWei(`${price}`, 'ether'));
 
-        await ((await marketplace
-          .createSell(nftCollectionAddress, tokenId, price, wallet, { from: wallet})).wait())
+        await (
+          await marketplace.createSell(
+            nftContractAddress,
+            tokenId,
+            price,
+            wallet,
+            { from: wallet }
+          )
+        ).wait();
 
         setIsLoading(false);
         location.reload();
@@ -153,36 +180,68 @@ const Nft = () => {
 
   const buyItem = async () => {
     // setIsLoading(true);
-    let nftCollectionAddress = data.nft.collection.address;
-    let tokenId = data.nft.tokenID;
-    console.log(nftCollectionAddress, wallet);
-    console.log(
-      await marketplace.getListedNFT(nftCollectionAddress, 2)
+    let provider = new ethers.providers.Web3Provider(window.ethereum);
+    
+    let marketplace = new ethers.Contract(
+      process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
+      marketplaceABI,
+      provider.getSigner()
     );
-    // try {
-    //   // console.log();
-    //   const tx = await marketplace.methods.buy(nftCollectionAddress, tokenId).send({
-    //     from: wallet,
-    //     value: data?.nft.listNFTs[0].price
-    //   });
-    //   await tx;
-    //   location.reload();
-    //   console.log('purchase success')
-    //   setStatus({ message: "Purchase successful", type: "success" });
-    // } catch (err) {
-    //   console.log(err)
-    //   setStatus({ message: err.message, type: "error" });
-    //   setIsLoading(false);
-    // }
+    let nftContractAddress = data.nft.collection.address;
+    let tokenId = data.nft.tokenID;
+    try {
+      // console.log();
+      await (await marketplace.buy(nftContractAddress, tokenId, {
+          from: wallet,
+          value: data?.nft.listNFTs[0].price,
+        })).wait()
+        
+      location.reload();
+      console.log('purchase success')
+      setStatus({ message: "Purchase successful", type: "success" });
+    } catch (err) {
+      console.log(err)
+      setStatus({ message: err.message, type: "error" });
+      setIsLoading(false);
+    }
     // "0x" + Web3.utils.toBN(Web3.utils.toWei(``, "ether")).toString(16)}
   };
 
   const removeListing = async () => {
     setIsLoading(true);
-    let nftCollectionAddress = data.nft.collection.address;
+    let provider = new ethers.providers.Web3Provider(window.ethereum);
+    let marketplace = new ethers.Contract(
+      process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
+      marketplaceABI,
+      provider.getSigner()
+    );
+    let nftContractAddress = data.nft.collection.address;
     let tokenId = data.nft.tokenID;
+    let nftContract = new ethers.Contract(
+      nftContractAddress,
+      nftContractABI,
+      provider.getSigner()
+    );
+    const isApproved = await nftContract.isApprovedForAll(
+      wallet,
+      process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS
+    );
+    console.log("approved?", isApproved);
+    if (!isApproved) {
+      await(
+        await nftContract.setApprovalForAll(
+          process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
+          true,
+          { from: wallet }
+        )
+      ).wait();
+    }
     try {
-      await((await marketplace.cancelListedNFT(nftCollectionAddress, tokenId, { from: wallet })).wait())
+      await (
+        await marketplace.cancelListedNFT(nftContractAddress, tokenId, {
+          from: wallet,
+        })
+      ).wait();
 
       location.reload();
       setStatus({ message: "Successfully removed listing", type: "success" });
@@ -194,13 +253,12 @@ const Nft = () => {
 
   const transferToken = async () => {
     setProcessing(true);
-    let nftCollectionAddress = data.nft.collection.address;
-    let nftContract = new ethers.Contract(
-      nftContractABI,
-      nftCollectionAddress
-    );
+    let nftContractAddress = data.nft.collection.address;
+    let nftContract = new ethers.Contract(nftContractAddress, nftContractABI);
     try {
-      await ((await nftContract.transferFrom(wallet, recipient, id, {from: wallet})).wait());
+      await (
+        await nftContract.transferFrom(wallet, recipient, id, { from: wallet })
+      ).wait();
 
       location.reload();
       setStatus({ message: "Transfer Successful", type: "success" });
@@ -217,10 +275,19 @@ const Nft = () => {
 
   useEffect(() => {
     if (!loading && !error) {
-      if (wallet === data?.nft?.owner.address) {
-        setIsOwner(true);
-      } else {
-        setIsOwner(false);
+      if (data?.nft?.listNFTs.length) {
+        if (compareAddress(wallet, data?.nft?.listNFTs[0].seller.address)) {
+          setIsOwner(true);
+        } else {
+          setIsOwner(false);
+        }
+      }
+      else {
+        if (compareAddress(wallet, data?.nft?.owner.address)) {
+          setIsOwner(true);
+        } else {
+          setIsOwner(false);
+        }
       }
     }
   }, [wallet, loading, error, data?.nft?.owner.address]);
@@ -259,7 +326,7 @@ const Nft = () => {
 
   const nft = data.nft;
   if (!nft) return null;
-
+console.log(isListed, wallet, isOwner)
   return (
     <section className="text-gray-600 body-font overflow-hidden">
       <div className="container px-5 py-24 mx-auto">
