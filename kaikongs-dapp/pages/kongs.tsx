@@ -1,10 +1,14 @@
 // @ts-nocheck
 import React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import Image from "next/image";
 import axios from "axios";
+import {ethers} from "ethers";
+import { useQuery, gql } from "@apollo/client";
 import Pagination from "../components/Pagination";
 import paginate from "../utils/paginate";
 import metadataJSON from "../public/_metadata_with_rarity.json";
+import convertIPFSPath from "../utils/convertIPFSPath";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSearch,
@@ -17,52 +21,83 @@ import { Dropdown } from "flowbite-react";
 
 declare var window: any;
 
+const CollectedNftsQuery = gql`
+  query nfts($address: String) {
+    nfts(where: { owner_: { address: $address } }) {
+      id
+      compiler
+      date
+      description
+      dna
+      edition
+      image
+      tokenID
+      name
+      tokenURI
+    }
+  }
+`;
+
 const Holdings = () => {
+  const pageSize = useMemo(() => {
+    return 1;
+  }, []);
   const [avatar, setAvatar] = useState("/avatar.png");
-  const [wallet, setWallet] = useState();
-  const [balance, setBalance] = useState(0);
+  const [wallet, setWallet] = useState('');
+  const [collectedNfts, setCollectedNfts] = useState([])
   const [holdings, setHoldings] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
-
-  const Web3 = require("web3");
-  const rpcURL = "https://rpc-2.kardiachain.io";
-  const web3 = new Web3(Web3.givenProvider || rpcURL);
-  const contractABI = require("../utils/contract-abi.json");
-  const contractAddress = "0xe83a69C8CD50d681895602ACdEC81F7847E70fde";
-
-  let contract = new web3.eth.Contract(contractABI, contractAddress);
+  
 
   const inputRef = useRef(null);
 
-  async function getCurrentWallet(): Promise<void> {
+  const {
+    data: _dataCollected,
+    loading: _loadingCollected,
+    error: _errorCollected,
+    fetchMore: _fetchMoreCollected
+  } = useQuery(CollectedNftsQuery, {
+    variables: {
+      offset: 0,
+      limit: pageSize,
+      address: wallet.toLowerCase(),
+    },
+  });
+
+  const connectWallet = async () => {
     if (window.ethereum) {
-      const accounts = await window.ethereum.request({
+      await window.ethereum.request({
         method: "eth_requestAccounts",
       });
-      const account = accounts[0];
-      console.log(account);
-      setWallet(account);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      setWallet(await provider.getSigner().getAddress());
+    } else {
+      window.open("https://metamask.io/", "_blank");
+    }
+  };
+
+  async function getCurrentWallet(): Promise<void> {
+    if (window.ethereum) {
+      await window.ethereum.request({
+        method: "eth_accounts",
+      });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      // console.log(account);
+      setWallet(await provider.getSigner().getAddress());
     }
   }
 
   const walletListener = () => {
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
-        console.log(accounts[0]);
+        // console.log(accounts[0]);
         setWallet(accounts[0]);
       });
     }
   };
 
   useEffect(() => {
-    getCurrentWallet();
-    walletListener();
-  }, []);
-
-  useEffect(() => {
-    fetchBalance();
     if (wallet) {
       console.log(process.env.NEXT_PUBLIC_FILEBASE_PROFILE_BUCKET_NAME);
       axios
@@ -77,74 +112,25 @@ const Holdings = () => {
         .catch((err) => {
           console.log(err);
         });
+      _fetchMoreCollected({
+        variables: {
+          offset: (currentPage - 1) * pageSize,
+          limit: pageSize,
+          address: wallet.toLowerCase(),
+        },
+      }).then(({data, loading, error}) => {
+        if (data && data.nfts) {
+          setCollectedNfts(data.nfts);
+        }
+      })
+      .catch(err => console.log(err));
     }
-  }, [wallet]);
+  }, [_fetchMoreCollected, currentPage, pageSize, wallet]);
 
   useEffect(() => {
-    fetchNFTs();
-  }, [balance]);
-
-  // useEffect(() => {
-  //   console.log(balance);
-  // }, [balance]);
-
-  // useEffect(() => {
-  //   console.log(holdings);
-  // }, [holdings]);
-
-  const connectWallet = async () => {
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      const account = accounts[0];
-      setWallet(account);
-    } else {
-      window.open("https://metamask.io/", "_blank");
-    }
-  };
-
-  const fetchBalance = async () => {
-    if (wallet) {
-      const bal = await contract.methods.balanceOf(wallet).call();
-      setBalance(bal);
-    }
-  };
-
-  const fetchNFTs = async () => {
-    for (let i = 0; i < balance; i++) {
-      const tokenID = await contract.methods
-        .tokenOfOwnerByIndex(wallet, i)
-        .call();
-
-      const tokenMetadataURI = `https://kai-kongs.myfilebase.com/ipfs/bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/${tokenID}.json`;
-
-      const tokenMetadata = await fetch(tokenMetadataURI).then((response) =>
-        response.json()
-      );
-      let tokenImage = tokenMetadata.image;
-      tokenImage = `https://kai-kongs.myfilebase.com/ipfs/${
-        tokenImage.split("ipfs://")[1]
-      }`;
-      const tokenName = tokenMetadata.name;
-
-      const nft = metadataJSON.find((nft) => {
-        return +nft.edition === +tokenMetadata.name.split("#")[1];
-      });
-
-      // console.log(tokenName);
-      setHoldings((holdings) => [
-        ...holdings,
-        {
-          id: holdings.length,
-          name: tokenName,
-          image: tokenImage,
-          token: tokenID,
-          rank: nft.rank,
-        },
-      ]);
-    }
-  };
+    getCurrentWallet();
+    walletListener();
+  }, []);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -164,8 +150,6 @@ const Holdings = () => {
       await axios.post("/api/upload", data);
     };
   };
-
-  const paginateHoldings = paginate(holdings, currentPage, pageSize);
 
   return (
     <div className="w-full min-h-screen holdings__wrapper">
@@ -204,10 +188,6 @@ const Holdings = () => {
         )}
 
         <div className="flex justify-between mb-12 items-end">
-          <h2 className="text-sm sm:text-2xl font-bold tracking-tight bg-[#f6f4f0] w-fit p-4 rounded-lg">
-            Your NFTs ({balance})
-          </h2>
-
           <a className="text-sm sm:text-lg" href="/kongs-onsale">
             Check Your NFTs On Sale &rarr;
           </a>
@@ -427,7 +407,38 @@ const Holdings = () => {
             role="tabpanel"
             aria-labelledby="profile-tab"
           >
-            <p className="text-center py-5">No items found for this search</p>
+            {collectedNfts.length ? (
+              <div className=" grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+                {
+                  collectedNfts.map((nft, index) => {
+                    return (
+                      <div
+                        key={index}
+                        className="group relative bg-[#f6f4f0] rounded-lg"
+                      >
+                        <a href={`/nft/${nft.id}`}>
+                          <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
+                            <Image
+                              fill
+                              src={convertIPFSPath(nft.image)}
+                              alt={nft.name}
+                              className="h-full w-full object-cover object-center lg:h-full lg:w-full"
+                            />
+                          </div>
+                          <div className="p-4 flex justify-between items-center">
+                            <div>
+                              <span>{nft.name}</span> <br />
+                            </div>
+                          </div>
+                        </a>
+                      </div>
+                    );
+                  })
+                }
+              </div>
+            ) : (
+              <p className="text-center py-5">No items found for this search</p>
+            )}
             <p className="text-center">
               <button className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
                 Back to all items
@@ -439,32 +450,6 @@ const Holdings = () => {
             id="dashboard"
             role="tabpanel"
             aria-labelledby="dashboard-tab"
-          >
-            <p className="text-center py-5">No items found for this search</p>
-            <p className="text-center">
-              <button className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-                Back to all items
-              </button>
-            </p>
-          </div>
-          <div
-            className="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border-[1px]"
-            id="settings"
-            role="tabpanel"
-            aria-labelledby="settings-tab"
-          >
-            <p className="text-center py-5">No items found for this search</p>
-            <p className="text-center">
-              <button className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-                Back to all items
-              </button>
-            </p>
-          </div>
-          <div
-            className="hidden p-4 rounded-lg bg-gray-50 dark:bg-gray-800 border-[1px]"
-            id="contacts"
-            role="tabpanel"
-            aria-labelledby="contacts-tab"
           >
             <p className="text-center py-5">No items found for this search</p>
             <p className="text-center">

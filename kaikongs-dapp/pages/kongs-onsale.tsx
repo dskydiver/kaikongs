@@ -1,48 +1,91 @@
 // @ts-nocheck
-import React from "react";
+import React, { useMemo } from "react";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import Pagination from "../components/Pagination";
 import paginate from "../utils/paginate";
 import profileImg from "../public/card.jpg";
 import metadataJSON from "../public/_metadata_with_rarity.json";
+import convertIPFSPath from "../utils/convertIPFSPath";
+import { useQuery, gql } from "@apollo/client";
 
 declare var window: any;
 
+const SaleQuery = gql`
+  query listNFTs($address: String, $offset: Int, $limit: Int) {
+    listNFTs(
+      where: { seller_: { address: $address }, sold: false }
+      skip: $offset
+      first: $limit
+    ) {
+      id
+      sold
+      price
+      seller {
+        address
+      }
+      nft {
+        date
+        description
+        compiler
+        dna
+        edition
+        id
+        image
+        name
+        tokenID
+        tokenURI
+      }
+    }
+  }
+`;
+
 const Holdings = () => {
+  const pageSize = useMemo(() => {
+    return 1;
+  }, []);
+
   const [wallet, setWallet] = useState();
   const [holdings, setHoldings] = useState([]);
 
   const [onSale, setOnSale] = useState(0);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
 
-  const Web3 = require("web3");
-  const rpcURL = "https://rpc-2.kardiachain.io";
-  const web3 = new Web3(Web3.givenProvider || rpcURL);
+  const {
+    data: _data,
+    loading: _loading,
+    error: _error,
+    fetchMore,
+  } = useQuery(SaleQuery, {
+    variables: {
+      offset: 0,
+      limit: pageSize,
+      address: wallet,
+    },
+  });
 
-  const nftContractABI = require("../utils/contract-abi.json");
-  const nftContractAddress = "0xe83a69C8CD50d681895602ACdEC81F7847E70fde";
-
-  // marketplace
-  const contractABI = require("../utils/marketplace-contract-abi.json");
-  const contractAddress = "0xC595e0D9dd590c82F415c00A770755a5D3B626BC";
-
-  let marketplace = new web3.eth.Contract(contractABI, contractAddress);
-
-  let contract = new web3.eth.Contract(nftContractABI, nftContractAddress);
-  let rawdata;
-
-  let onSaleTokens;
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      setWallet(await provider.getSigner().getAddress());
+    } else {
+      window.open("https://metamask.io/", "_blank");
+    }
+  };
 
   async function getCurrentWallet(): Promise<void> {
     if (window.ethereum) {
-      const accounts = await window.ethereum.request({
+      await window.ethereum.request({
         method: "eth_accounts",
       });
-      const account = accounts[0];
-      setWallet(account);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      // console.log(account);
+      setWallet(await provider.getSigner().getAddress());
     }
   }
 
@@ -55,90 +98,38 @@ const Holdings = () => {
     }
   };
 
-  const connectWallet = async () => {
-    if (window.ethereum) {
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      const account = accounts[0];
-      setWallet(account);
-    } else {
-      window.open("https://metamask.io/", "_blank");
-    }
-  };
-
-  const getOnSale = async () => {
-    const saleTokens = await marketplace.methods
-      .getListedNFTsByUser(wallet)
-      .call();
-    await saleTokens;
-    setOnSale(saleTokens.length);
-  };
-
   useEffect(() => {
     getCurrentWallet();
     walletListener();
   }, []);
 
   useEffect(() => {
-    if (wallet != undefined) {
-      getOnSale();
+    if (_data && _data.listNFTs) {
+      setHoldings(_data.listNFTs);
     }
-  });
+  }, [_data]);
 
   useEffect(() => {
-    if (wallet != undefined) {
-      fetchNFTs();
-    }
-  }, [onSale]);
-
-  const fetchNFTs = async () => {
-    const onSaleTokens = await marketplace.methods
-      .getListedNFTsByUser(wallet)
-      .call();
-    for (let i = 0; i < onSale; i++) {
-      // let tokenMetadataURI = await contract.methods.tokenURI(onSaleTokens[i]).call();
-
-      // tokenMetadataURI = `https://kai-kongs.myfilebase.com/ipfs/${tokenMetadataURI.split("ipfs://")[1]}`
-
-      const tokenMetadataURI = `https://kai-kongs.myfilebase.com/ipfs/bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/${onSaleTokens[i]}.json`;
-
-      const tokenMetadata = await fetch(tokenMetadataURI).then((response) =>
-        response.json()
-      );
-      let tokenImage = tokenMetadata.image;
-
-      tokenImage = `https://kai-kongs.myfilebase.com/ipfs/${
-        tokenImage.split("ipfs://")[1]
-      }`;
-      const tokenName = tokenMetadata.name;
-
-      const nft = metadataJSON.find((nft) => {
-        return +nft.edition === +tokenMetadata.name.split("#")[1];
-      });
-
-      // console.log(nft.name);
-
-      setHoldings((holdings) => [
-        ...holdings,
-        {
-          id: holdings.length,
-          name: tokenName,
-          image: tokenImage,
-          token: onSaleTokens[i],
-          rank: nft.rank,
+    if (wallet) {
+      fetchMore({
+        variables: {
+          offset: (currentPage - 1) * pageSize,
+          limit: pageSize,
+          address: wallet.toLowerCase(),
         },
-      ]);
+      })
+        .then(({ data, loading, error }) => {
+          if (data && data.listNFTs)
+            setHoldings(data.listNFTs);
+        })
+        .catch((error) => console.log(error));
     }
-
-    // console.log(holdings);
-  };
+  }, [currentPage, fetchMore, pageSize, wallet]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
-
-  const paginateHoldings = paginate(holdings, currentPage, pageSize);
+  console.log(holdings)
 
   return (
     <div className="w-full min-h-screen holdings__wrapper">
@@ -152,7 +143,7 @@ const Holdings = () => {
                   </div>
                 </div> */}
 
-        <div className="flex justify-between mb-12 items-end">
+        {/* <div className="flex justify-between mb-12 items-end">
           <button
             className="text-sm sm:text-2xl font-bold tracking-tight bg-[#f6f4f0] w-fit p-4 rounded-lg"
             onClick={fetchNFTs}
@@ -161,7 +152,7 @@ const Holdings = () => {
           </button>
 
           <a href="/kongs">Check Holdings &rarr;</a>
-        </div>
+        </div> */}
 
         <div className="wallet_btn w-[12rem] ">
           {!wallet && (
@@ -181,34 +172,38 @@ const Holdings = () => {
 
         {wallet && (
           <div className=" grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-            {/* {holdings.map(nft => (
-                            <HoldingCard name={nft.name} image={nft.image} id={nft.id}></HoldingCard>
-                        ))} */}
-            {onSale < 1 ? (
+            {holdings.length < 1 ? (
               <p className="text-xl p-2 bg-red-400 rounded-lg">
                 No NFTs found.
               </p>
             ) : (
-              holdings.length == 0 && <span className="loader"></span>
+              <></>
             )}
 
-            {paginateHoldings.map((nft) => (
+            {holdings.map((listedNft) => (
               <div
-                key={nft.id}
+                key={listedNft.id}
                 className="group relative bg-[#f6f4f0] rounded-lg"
               >
-                <a href={`/nft/${nft.token}`}>
-                  <div className="min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
-                    <img
-                      placeholder="blur"
-                      src={nft.image}
-                      alt={nft.name}
+                <a href={`/nft/${listedNft.nft.id}`}>
+                  <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
+                    <Image
+                      fill
+                      src={convertIPFSPath(listedNft.nft.image)}
+                      alt={listedNft.nft.name}
                       className="h-full w-full object-cover object-center lg:h-full lg:w-full"
                     />
                   </div>
                   <div className="p-4 flex justify-between items-center">
-                    <span className="p-2">{nft.name}</span>
-                    <span className="text-sm">Rank #{nft.rank}</span>
+                    <div>
+                      <span>{listedNft.name}</span> <br />
+                    </div>
+                    <span className="text-sm">
+                      {listedNft.price.length > 5
+                        ? `${listedNft.price}`.slice(0, 5) + ".."
+                        : listedNft.price}{" "}
+                      KAI
+                    </span>
                   </div>
                 </a>
               </div>

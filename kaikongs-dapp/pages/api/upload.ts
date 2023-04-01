@@ -19,7 +19,6 @@ export default async function handler(
     const contents = await fs.readFile(data?.files?.file.filepath);
 
     const mimetype = data?.files?.file.mimetype;
-    await fs.writeFile(`F://${address}.${mimetype.split("/")[1]}`, contents);
 
     if (contents) {
       const s3 = new AWS.S3({
