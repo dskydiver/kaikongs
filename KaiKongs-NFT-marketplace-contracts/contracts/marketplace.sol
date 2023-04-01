@@ -252,10 +252,13 @@ contract KaiKongsMarketplace is
             _nfts.length == _tokenIds.length,
             "The length of ids and nfts should be equal"
         );
-
+        uint256 sumOfPrice = 0;
         for (uint256 i = 0; i < _nfts.length; i++) {
             ListNFT memory listedNft = listNfts[_nfts[i]][_tokenIds[i]];
-            this.buy{value: listedNft.price}(_nfts[i], _tokenIds[i]);
+            sumOfPrice = sumOfPrice + listedNft.price;
+            require(msg.value >= sumOfPrice, "The msg.value is not enough");
+
+            this.buy{value: listedNft.price}(_nfts[i], _tokenIds[i], msg.sender);
         }
     }
 
@@ -266,7 +269,8 @@ contract KaiKongsMarketplace is
      */
     function buy(
         address _nft,
-        uint256 _tokenId
+        uint256 _tokenId,
+        address buyer
     ) external payable isListedNFT(_nft, _tokenId) {
         ListNFT storage listedNft = listNfts[_nft][_tokenId];
 
@@ -298,7 +302,7 @@ contract KaiKongsMarketplace is
         // Transfer NFT to buyer
         IERC721(listedNft.nft).safeTransferFrom(
             address(this),
-            msg.sender,
+            buyer,
             listedNft.tokenId
         );
 
@@ -307,7 +311,7 @@ contract KaiKongsMarketplace is
             listedNft.tokenId,
             msg.value,
             listedNft.seller,
-            msg.sender
+            buyer
         );
     }
 

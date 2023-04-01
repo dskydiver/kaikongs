@@ -74,8 +74,8 @@ async function main() {
   // ).wait();
 
   await (
-    await marketplace.connect(user1).buy(nftAddress, 1, {
-      value: ethers.utils.parseEther("3"),
+    await marketplace.connect(user1).bulkBuy([nftAddress, nftAddress], [1, 2], {
+      value: ethers.utils.parseEther("7"),
     })
   ).wait();
 
