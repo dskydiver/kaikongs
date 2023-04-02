@@ -57,6 +57,7 @@ type ListNFT @entity {
   seller: User!
   price: BigInt
   sold: Boolean!
+  canceled: Boolean!
   date: BigInt!
   boughtNFT: BuyNFT @derivedFrom(field: "listNFT")
   offerNFT: [OfferNFT!] @derivedFrom(field: "listNFT")

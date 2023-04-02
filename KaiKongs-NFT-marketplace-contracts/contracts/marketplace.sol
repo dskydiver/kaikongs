@@ -75,6 +75,11 @@ contract KaiKongsMarketplace is
         uint256 date,
         address indexed seller
     );
+    event CanceledListedNFT(
+        address indexed nft,
+        uint256 indexed tokenId,
+        address indexed seller
+    );
     event BoughtNFT(
         address indexed nft,
         uint256 indexed tokenId,
@@ -237,6 +242,8 @@ contract KaiKongsMarketplace is
         require(listedNFT.seller == msg.sender, "not listed owner");
         IERC721(_nft).transferFrom(address(this), msg.sender, _tokenId);
         delete listNfts[_nft][_tokenId];
+
+        emit CanceledListedNFT(_nft, _tokenId, listedNFT.seller);
     }
 
     /**
@@ -256,8 +263,12 @@ contract KaiKongsMarketplace is
         for (uint256 i = 0; i < _nfts.length; i++) {
             ListNFT memory listedNft = listNfts[_nfts[i]][_tokenIds[i]];
             sumOfPrice = sumOfPrice + listedNft.price;
-            require(msg.value >= sumOfPrice, "The msg.value is not enough");
+        }
 
+        require(msg.value >= sumOfPrice, "The msg.value is not enough");
+
+        for (uint256 i = 0; i < _nfts.length; i++) {
+            ListNFT memory listedNft = listNfts[_nfts[i]][_tokenIds[i]];
             this.buy{value: listedNft.price}(_nfts[i], _tokenIds[i], msg.sender);
         }
     }

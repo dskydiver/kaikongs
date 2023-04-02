@@ -11,6 +11,7 @@ import {
 } from "@graphprotocol/graph-ts";
 import {
   ListedNFT as ListedNFTEvent,
+  CanceledListedNFT as CanceledListedNFTEvent,
   BoughtNFT as BoughtNFTEvent,
   OfferredNFT as OfferredNFTEvent,
   CanceledOfferredNFT as CanceledOfferredNFTEvent,
@@ -165,6 +166,7 @@ export function handleListedNFT(event: ListedNFTEvent): void {
     listNFT.seller = event.params.seller.toHexString();
     listNFT.price = event.params.price;
     listNFT.sold = false;
+    listNFT.canceled = false;
     listNFT.date = event.block.timestamp;
     listNFT.save();
   }
@@ -335,6 +337,30 @@ export function handleAcceptedNFT(event: AcceptedNFTEvent): void {
       offerNFT.accepted = true;
       listNFT.save();
       offerNFT.save();
+    }
+  }
+}
+
+export function handleCenceledListedNFT(event: CanceledListedNFTEvent): void {
+  let marketplace = Marketplace.bind(dataSource.address());
+  let listedNFT = marketplace.try_getListedNFT(event.params.nft, event.params.tokenId);
+
+  let nft = NFT.load(generateId([event.params.nft.toHexString(), event.params.tokenId.toString()]));
+
+  if (nft) {
+    if (!listedNFT.reverted) {
+      let listNFT = ListNFT.load(
+        generateId([
+          event.params.nft.toHexString(),
+          event.params.tokenId.toString(),
+          listedNFT.value.seller.toHexString(),
+          listedNFT.value.date.toString()
+        ])
+      );
+      if (listNFT) {
+        listNFT.canceled = true;
+        listNFT.save()
+      }
     }
   }
 }

@@ -29,6 +29,8 @@ dataSources:
       eventHandlers:
         - event: ListedNFT(indexed address,indexed uint256,uint256,uint256,indexed address)
           handler: handleListedNFT
+        - event: CanceledListedNFT(indexed address,indexed uint256,indexed address)
+          handler: handleCenceledListedNFT
         - event: BoughtNFT(indexed address,indexed uint256,uint256,address,indexed address)
           handler: handleBoughtNFT
         - event: OfferredNFT(indexed address,indexed uint256,uint256,uint256,indexed address)
