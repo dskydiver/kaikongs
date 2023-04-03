@@ -93,7 +93,11 @@ const Nft = () => {
         method: "eth_requestAccounts",
       });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      setWallet(await provider.getSigner().getAddress());
+      let wallet = "";
+      try {
+        wallet = await provider.getSigner().getAddress();
+        setWallet(wallet);
+      } catch (err) {}
     } else {
       window.open("https://metamask.io/", "_blank");
     }
@@ -105,8 +109,12 @@ const Nft = () => {
         method: "eth_accounts",
       });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+      let wallet = "";
+      try {
+        wallet = await provider.getSigner().getAddress();
+        setWallet(wallet);
+      } catch (err) {}
       // console.log(account);
-      setWallet(await provider.getSigner().getAddress());
     }
   }
 
@@ -132,14 +140,18 @@ const Nft = () => {
     let nftContractAddress = data.nft.collection.address;
     let tokenId = data.nft.tokenID;
 
-    let nftContract = new ethers.Contract(nftContractAddress, nftContractABI, provider.getSigner());
+    let nftContract = new ethers.Contract(
+      nftContractAddress,
+      nftContractABI,
+      provider.getSigner()
+    );
     const isApproved = await nftContract.isApprovedForAll(
       wallet,
-      process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
+      process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS
     );
-      console.log('approved?', isApproved)
+    console.log("approved?", isApproved);
     if (!isApproved) {
-      await(
+      await (
         await nftContract.setApprovalForAll(
           process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
           true,
@@ -181,7 +193,7 @@ const Nft = () => {
   const buyItem = async () => {
     // setIsLoading(true);
     let provider = new ethers.providers.Web3Provider(window.ethereum);
-    
+
     let marketplace = new ethers.Contract(
       process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
       marketplaceABI,
@@ -191,16 +203,18 @@ const Nft = () => {
     let tokenId = data.nft.tokenID;
     try {
       // console.log();
-      await (await marketplace.buy(nftContractAddress, tokenId, {
+      await (
+        await marketplace.buy(nftContractAddress, tokenId, wallet, {
           from: wallet,
           value: data?.nft.listNFTs[0].price,
-        })).wait()
-        
+        })
+      ).wait();
+
       location.reload();
-      console.log('purchase success')
+      console.log("purchase success");
       setStatus({ message: "Purchase successful", type: "success" });
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setStatus({ message: err.message, type: "error" });
       setIsLoading(false);
     }
@@ -228,7 +242,7 @@ const Nft = () => {
     );
     console.log("approved?", isApproved);
     if (!isApproved) {
-      await(
+      await (
         await nftContract.setApprovalForAll(
           process.env.NEXT_PUBLIC_MARKETPLACE_CONTRACT_ADDRESS,
           true,
@@ -274,15 +288,14 @@ const Nft = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading && !error) {
+    if (!loading && !error && wallet) {
       if (data?.nft?.listNFTs.length) {
         if (compareAddress(wallet, data?.nft?.listNFTs[0].seller.address)) {
           setIsOwner(true);
         } else {
           setIsOwner(false);
         }
-      }
-      else {
+      } else {
         if (compareAddress(wallet, data?.nft?.owner.address)) {
           setIsOwner(true);
         } else {
@@ -290,7 +303,7 @@ const Nft = () => {
         }
       }
     }
-  }, [wallet, loading, error, data?.nft?.owner.address]);
+  }, [wallet, loading, error, data?.nft?.owner.address, data?.nft?.listNFTs]);
 
   useEffect(() => {
     setData(_data);
@@ -326,7 +339,7 @@ const Nft = () => {
 
   const nft = data.nft;
   if (!nft) return null;
-console.log(isListed, wallet, isOwner)
+  console.log(isListed, wallet, isOwner);
   return (
     <section className="text-gray-600 body-font overflow-hidden">
       <div className="container px-5 py-24 mx-auto">

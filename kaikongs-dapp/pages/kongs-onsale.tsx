@@ -66,28 +66,36 @@ const Holdings = () => {
     },
   });
 
-  const connectWallet = async () => {
-    if (window.ethereum) {
-      await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      setWallet(await provider.getSigner().getAddress());
-    } else {
-      window.open("https://metamask.io/", "_blank");
-    }
-  };
+    const connectWallet = async () => {
+      if (window.ethereum) {
+        await window.ethereum.request({
+          method: "eth_requestAccounts",
+        });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        let wallet = "";
+        try {
+          wallet = await provider.getSigner().getAddress();
+          setWallet(wallet);
+        } catch (err) {}
+      } else {
+        window.open("https://metamask.io/", "_blank");
+      }
+    };
 
-  async function getCurrentWallet(): Promise<void> {
-    if (window.ethereum) {
-      await window.ethereum.request({
-        method: "eth_accounts",
-      });
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      // console.log(account);
-      setWallet(await provider.getSigner().getAddress());
+    async function getCurrentWallet(): Promise<void> {
+      if (window.ethereum) {
+        await window.ethereum.request({
+          method: "eth_accounts",
+        });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        let wallet = "";
+        try {
+          wallet = await provider.getSigner().getAddress();
+          setWallet(wallet);
+        } catch (err) {}
+        // console.log(account);
+      }
     }
-  }
 
   const walletListener = () => {
     if (window.ethereum) {

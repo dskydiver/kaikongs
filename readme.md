@@ -1,6 +1,6 @@
 How to get started with graph-node
 ```
-git clone https://github.com/graphprotocol/graph-node
+where: {sold: false}
 cd graph-node/docker
 
 Insert the following two lines to environment variables of docker-compose.yaml file.

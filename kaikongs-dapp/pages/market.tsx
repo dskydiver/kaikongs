@@ -3,16 +3,30 @@ import Image from "next/image";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, gql } from "@apollo/client";
 import Pagination from "../components/Pagination";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import paginate from "../utils/paginate";
 import profileImg from "../public/card.jpg";
 import metadataJSON from "../public/_metadata_with_rarity.json";
 import convertIPFSPath from "../utils/convertIPFSPath";
+import {
+  faSearch,
+  faList,
+  faTableCells,
+  faTableCellsLarge,
+} from "@fortawesome/free-solid-svg-icons";
 
 declare var window: any;
 
+var SORTLABELS = ['Price low to high', 'Price high to low', 'Recently listed']
+
 const ListedNftsQuery = gql`
-  query ListedNfts($offset: Int, $limit: Int) {
-    listNFTs(skip: $offset, first: $limit) {
+  query ListedNfts($offset: Int, $limit: Int, $orderDirection: String, $orderBy: String) {
+    listNFTs(
+      skip: $offset
+      first: $limit
+      orderDirection: $orderDirection
+      orderBy: $orderBy
+    ) {
       id
       price
       nft {
@@ -51,7 +65,9 @@ const Holdings = () => {
   const { data: _data, loading: _loading, error: _error, fetchMore } = useQuery(ListedNftsQuery, {
     variables: {
       offset: 0,
-      limit: pageSize
+      limit: pageSize,
+      orderDirection: 'asc',
+      orderBy: 'price'
     }
   });
 
@@ -59,110 +75,8 @@ const Holdings = () => {
   const [loading, setLoading] = useState(_loading)
   const [error, setError] = useState(_error)
   const [data, setData] = useState(_data);
-  // const [sortedNftItems, setSortedNftItems] = useState([]);
-  // const [floorToken, setFloorToken] = useState();
-  // const [floorPrice, setFloorPrice] = useState();
-  // const [totalItems, setTotalItems] = useState();
-  // const [volume, setVolume] = useState();
-  // const dataFetchedRef = useRef(false);
+  const [sortId, setSortId] = useState(0)
 
-  // const Web3 = require("web3");
-  // // const rpcURL = "https://rpc.kardiachain.io"
-  // const rpcURL = "https://rpc-2.kardiachain.io/";
-
-  // // console.log(Web3.givenProvider);
-
-  // const web3 = new Web3(Web3.givenProvder || rpcURL);
-
-  // const nftContractABI = require("../utils/contract-abi.json");
-  // const nftContractAddress = "0xe83a69C8CD50d681895602ACdEC81F7847E70fde";
-  // let nftContract = new web3.eth.Contract(nftContractABI, nftContractAddress);
-
-  // // marketplace
-  // const contractABI = require("../utils/marketplace-contract-abi.json");
-  // const contractAddress = "0xC595e0D9dd590c82F415c00A770755a5D3B626BC";
-
-  // let contract = new web3.eth.Contract(contractABI, contractAddress);
-  // let rawdata;
-
-  // let paginateHoldings = paginate(nftItems, currentPage, pageSize);
-
-  // useEffect(() => {
-  //   if (dataFetchedRef.current) return;
-  //   dataFetchedRef.current = true;
-  //   fetchNFTs();
-  //   fetchMetrics();
-  // }, []);
-
-  // const fetchMetrics = async () => {
-  //   const floorTokenId = await contract.methods.getFloorTokenId().call();
-  //   setFloorToken(floorTokenId);
-
-  //   const price = await contract.methods.getPrice(floorTokenId).call();
-  //   setFloorPrice(price);
-
-  //   const itemsListed = await contract.methods.itemsListed().call();
-  //   setTotalItems(itemsListed);
-
-  //   const marketVolume = await contract.methods.volume().call();
-  //   setVolume(marketVolume);
-  // };
-
-
-  // const removeActiveOption = () => {
-  //   const option = document.querySelector(".active__option");
-
-  //   if (option !== null) {
-  //     option.classList.remove("active__option");
-  //   }
-  // };
-
-  // const rankHighToLow = () => {
-  //   const dropdown = document.getElementById("dropdown");
-  //   dropdown.classList.toggle("hidden");
-
-  //   removeActiveOption();
-
-  //   const option = document.getElementById("r-h-l");
-  //   option.classList.toggle("active__option");
-  //   const sortedNfts = nftItems.sort(function (a, b) {
-  //     return a.rank - b.rank;
-  //   });
-  //   setSortedNftItems(sortedNfts);
-  //   // console.log(sortedNftItems);
-  // };
-
-  // const priceLowToHigh = () => {
-  //   const dropdown = document.getElementById("dropdown");
-  //   dropdown.classList.toggle("hidden");
-
-  //   removeActiveOption();
-
-  //   const option = document.getElementById("p-l-h");
-  //   option.classList.toggle("active__option");
-  //   console.log(nftItems);
-  //   const sortedNfts = nftItems.sort(function (a, b) {
-  //     return a.tokenPrice - b.tokenPrice;
-  //   });
-  //   console.log(sortedNftItems);
-  //   setSortedNftItems(sortedNfts);
-  // };
-
-  // const priceHighToLow = () => {
-  //   const dropdown = document.getElementById("dropdown");
-  //   dropdown.classList.toggle("hidden");
-
-  //   removeActiveOption();
-
-  //   const option = document.getElementById("p-h-l");
-  //   option.classList.toggle("active__option");
-  //   console.log(nftItems);
-  //   const sortedNfts = nftItems.sort(function (a, b) {
-  //     return b.tokenPrice - a.tokenPrice;
-  //   });
-  //   console.log(sortedNftItems);
-  //   setSortedNftItems(sortedNfts);
-  // };
 
   const handlePageChange = async (page) => {
     console.log(page)
@@ -177,14 +91,53 @@ const Holdings = () => {
     setCurrentPage(page);
   };
 
-  // if (sortedNftItems.length > 0) {
-  //   let paginateHoldings = paginate(sortedNftItems, currentPage, pageSize);
-  // }
 
-  // // useEffect(() => {
-  // //   paginateHoldings = paginate(nftItems, currentPage, pageSize)
-  // //   console.log("Updated!!")
-  // // }, [nftItems])
+
+  const handleDropdownClick = (id: number) => async () => {
+    setSortId(id)
+
+    switch (id) {
+      case 0:
+        const {data, loading, error} = await fetchMore({
+          variables: {
+            offset: 0,
+            limit: pageSize,
+            orderDirection: "asc",
+            orderBy: "price",
+          },
+        });
+        setData(data)
+        setLoading(loading)
+        setError(error)
+        break;
+      case 1:
+        const {data: _data, loading: _loading, error: _error} = await fetchMore({
+          variables: {
+            offset: 0,
+            limit: pageSize,
+            orderDirection: "desc",
+            orderBy: "price",
+          },
+        });
+        setData(_data)
+        setLoading(_loading)
+        setError(_error)
+        break;
+      case 2:
+        const {data: __data, loading: __loading, error: __error} = await fetchMore({
+          variables: {
+            offset: 0,
+            limit: pageSize,
+            orderDirection: "desc",
+            orderBy: "date",
+          },
+        });
+        setData(__data)
+        setLoading(__loading)
+        setError(__error)
+        break;
+    }
+  }
 
   useEffect(() => {
     setData(_data);
@@ -309,7 +262,113 @@ const Holdings = () => {
            </div>
          </div> */}
 
-          <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+          <div className="flex justify-between">
+            <div className="relative flex items-center grow">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg
+                  aria-hidden="true"
+                  className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </div>
+              <input
+                type="text"
+                id="success"
+                className="bg-gray-50 border pl-10 h-full border-gray-500 text-gray-900 dark:text-gray-400 placeholder-gray-700 dark:placeholder-gray-500 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-500"
+                placeholder="Success input"
+              />
+            </div>
+            <div className="pl-2">
+              <div className="border-[1px] p-2 border-gray-400 rounded-[1rem] h-full">
+                <button
+                  id="dropdownDefaultButton"
+                  data-dropdown-toggle="dropdown"
+                  className="text-black bg-white focus:outline-none font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                  type="button"
+                >
+                  {SORTLABELS[sortId]}{" "}
+                  <svg
+                    className="w-4 h-4 ml-2"
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    ></path>
+                  </svg>
+                </button>
+                <div
+                  id="dropdown"
+                  className="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700"
+                >
+                  <ul
+                    className="py-2 text-sm text-gray-700 dark:text-gray-200"
+                    aria-labelledby="dropdownDefaultButton"
+                  >
+                    {SORTLABELS.map((label, index) => (
+                      <li key={index}>
+                        <button
+                          className="block w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                          onClick={handleDropdownClick(index)}
+                        >
+                          {label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="inline-flex rounded-md shadow-sm pl-2" role="group">
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border border-gray-400 rounded-l-lg hover:bg-gray-900 hover:text-white focus:z-10 focus:ring-2 focus:ring-gray-500 focus:bg-gray-900 focus:text-white dark:border-white dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+              >
+                <FontAwesomeIcon className="p-2 text-gray-400" icon={faList} />
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border-t border-b border-gray-400 hover:bg-gray-900 hover:text-white focus:z-10 focus:ring-2 focus:ring-gray-500 focus:bg-gray-900 focus:text-white dark:border-white dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+              >
+                <FontAwesomeIcon
+                  className="p-2 text-gray-400"
+                  icon={faTableCells}
+                />
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border-t border-b border-l border-gray-400  hover:bg-gray-900 hover:text-white focus:z-10 focus:ring-2 focus:ring-gray-500 focus:bg-gray-900 focus:text-white dark:border-white dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+              >
+                <FontAwesomeIcon
+                  className="p-2 text-gray-400"
+                  icon={faTableCellsLarge}
+                />
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-transparent border border-gray-400 rounded-r-md hover:bg-gray-900 hover:text-white focus:z-10 focus:ring-2 focus:ring-gray-500 focus:bg-gray-900 focus:text-white dark:border-white dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:bg-gray-700"
+              >
+                <FontAwesomeIcon className="p-2 text-gray-400" icon={faList} />
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8 mt-5">
             {loading && <div>loading</div>}
             {error && <div>Error occurred when fetching from graphql</div>}
             {!loading &&
@@ -319,38 +378,18 @@ const Holdings = () => {
                   key={index}
                   className="group relative bg-gray-100 rounded-lg"
                 >
-                  <a href={`/nft/${listedNft.nft.id}`}>
-                    <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
-                      <Image
-                        fill
-                        src={convertIPFSPath(listedNft.nft.image)}
-                        alt={listedNft.nft.name}
-                        className="h-full w-full object-cover object-center lg:h-full lg:w-full"
-                      />
-                    </div>
-                    <div className="p-4 flex justify-between items-center">
-                      <div>
-                        <span>{listedNft.name}</span> <br />
-                      </div>
-                      <span className="text-sm">
-                        {listedNft.price.length > 5
-                          ? `${listedNft.price}`.slice(0, 5) + ".."
-                          : listedNft.price}{" "}
-                        KAI
-                      </span>
-                    </div>
-                  </a>
+                  
                 </div>
               ))}
           </div>
         </div>
-        
-       <Pagination
-         items={2}
-         pageSize={pageSize}
-         currentPage={currentPage}
-         onPageChange={handlePageChange}
-       />
+
+        <Pagination
+          items={2}
+          pageSize={pageSize}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+        />
       </div>
     </div>
   );

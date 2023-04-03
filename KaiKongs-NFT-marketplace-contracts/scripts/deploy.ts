@@ -73,11 +73,11 @@ async function main() {
   //     .buy(nftAddress, 2, { value: ethers.utils.parseEther("4") })
   // ).wait();
 
-  await (
-    await marketplace.connect(user1).bulkBuy([nftAddress, nftAddress], [1, 2], {
-      value: ethers.utils.parseEther("7"),
-    })
-  ).wait();
+  // await (
+  //   await marketplace.connect(user1).bulkBuy([nftAddress, nftAddress], [1, 2], {
+  //     value: ethers.utils.parseEther("7"),
+  //   })
+  // ).wait();
 
   console.log(await nft.balanceOf(marketplace.address))
   console.log(await nft.balanceOf(owner.address));

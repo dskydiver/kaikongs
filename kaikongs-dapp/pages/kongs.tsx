@@ -3,7 +3,7 @@ import React from "react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import axios from "axios";
-import {ethers} from "ethers";
+import { ethers } from "ethers";
 import { useQuery, gql } from "@apollo/client";
 import Pagination from "../components/Pagination";
 import paginate from "../utils/paginate";
@@ -20,6 +20,7 @@ import {
 import { Dropdown } from "flowbite-react";
 
 declare var window: any;
+var SORTLABELS = ['Price low to high', 'Price high to low', 'Recently listed']
 
 const CollectedNftsQuery = gql`
   query nfts($address: String) {
@@ -43,12 +44,12 @@ const Holdings = () => {
     return 1;
   }, []);
   const [avatar, setAvatar] = useState("/avatar.png");
-  const [wallet, setWallet] = useState('');
-  const [collectedNfts, setCollectedNfts] = useState([])
+  const [wallet, setWallet] = useState("");
+  const [collectedNfts, setCollectedNfts] = useState([]);
   const [holdings, setHoldings] = useState([]);
+  const [sortId, setSortId] = useState(0)
 
   const [currentPage, setCurrentPage] = useState(1);
-  
 
   const inputRef = useRef(null);
 
@@ -56,7 +57,7 @@ const Holdings = () => {
     data: _dataCollected,
     loading: _loadingCollected,
     error: _errorCollected,
-    fetchMore: _fetchMoreCollected
+    fetchMore: _fetchMoreCollected,
   } = useQuery(CollectedNftsQuery, {
     variables: {
       offset: 0,
@@ -71,7 +72,11 @@ const Holdings = () => {
         method: "eth_requestAccounts",
       });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      setWallet(await provider.getSigner().getAddress());
+      let wallet = "";
+      try {
+        wallet = await provider.getSigner().getAddress();
+        setWallet(wallet);
+      } catch (err) {}
     } else {
       window.open("https://metamask.io/", "_blank");
     }
@@ -83,8 +88,12 @@ const Holdings = () => {
         method: "eth_accounts",
       });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+      let wallet = "";
+      try {
+        wallet = await provider.getSigner().getAddress();
+        setWallet(wallet);
+      } catch (err) {}
       // console.log(account);
-      setWallet(await provider.getSigner().getAddress());
     }
   }
 
@@ -96,6 +105,60 @@ const Holdings = () => {
       });
     }
   };
+
+    const handleDropdownClick = (id: number) => async () => {
+      setSortId(id);
+
+      switch (id) {
+        case 0:
+          const { data, loading, error } = await fetchMore({
+            variables: {
+              offset: 0,
+              limit: pageSize,
+              orderDirection: "asc",
+              orderBy: "price",
+            },
+          });
+          setData(data);
+          setLoading(loading);
+          setError(error);
+          break;
+        case 1:
+          const {
+            data: _data,
+            loading: _loading,
+            error: _error,
+          } = await fetchMore({
+            variables: {
+              offset: 0,
+              limit: pageSize,
+              orderDirection: "desc",
+              orderBy: "price",
+            },
+          });
+          setData(_data);
+          setLoading(_loading);
+          setError(_error);
+          break;
+        case 2:
+          const {
+            data: __data,
+            loading: __loading,
+            error: __error,
+          } = await fetchMore({
+            variables: {
+              offset: 0,
+              limit: pageSize,
+              orderDirection: "desc",
+              orderBy: "date",
+            },
+          });
+          setData(__data);
+          setLoading(__loading);
+          setError(__error);
+          break;
+      }
+    };
 
   useEffect(() => {
     if (wallet) {
@@ -118,12 +181,13 @@ const Holdings = () => {
           limit: pageSize,
           address: wallet.toLowerCase(),
         },
-      }).then(({data, loading, error}) => {
-        if (data && data.nfts) {
-          setCollectedNfts(data.nfts);
-        }
       })
-      .catch(err => console.log(err));
+        .then(({ data, loading, error }) => {
+          if (data && data.nfts) {
+            setCollectedNfts(data.nfts);
+          }
+        })
+        .catch((err) => console.log(err));
     }
   }, [_fetchMoreCollected, currentPage, pageSize, wallet]);
 
@@ -188,6 +252,9 @@ const Holdings = () => {
         )}
 
         <div className="flex justify-between mb-12 items-end">
+          <a className="text-sm sm:text-lg" href="/collection">
+            My Collections
+          </a>
           <a className="text-sm sm:text-lg" href="/kongs-onsale">
             Check Your NFTs On Sale &rarr;
           </a>
@@ -242,32 +309,6 @@ const Holdings = () => {
                 Created
               </button>
             </li>
-            <li className="mr-2" role="presentation">
-              <button
-                className="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-                id="settings-tab"
-                data-tabs-target="#settings"
-                type="button"
-                role="tab"
-                aria-controls="settings"
-                aria-selected="false"
-              >
-                Favorited
-              </button>
-            </li>
-            <li role="presentation">
-              <button
-                className="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300"
-                id="contacts-tab"
-                data-tabs-target="#contacts"
-                type="button"
-                role="tab"
-                aria-controls="contacts"
-                aria-selected="false"
-              >
-                Activity
-              </button>
-            </li>
           </ul>
         </div>
 
@@ -305,7 +346,7 @@ const Holdings = () => {
                 className="text-black bg-white focus:outline-none font-medium rounded-lg text-sm px-4 py-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
                 type="button"
               >
-                Dropdown button{" "}
+                {SORTLABELS[sortId]}{" "}
                 <svg
                   className="w-4 h-4 ml-2"
                   aria-hidden="true"
@@ -330,38 +371,16 @@ const Holdings = () => {
                   className="py-2 text-sm text-gray-700 dark:text-gray-200"
                   aria-labelledby="dropdownDefaultButton"
                 >
-                  <li>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >
-                      Dashboard
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >
-                      Settings
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >
-                      Earnings
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href="#"
-                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >
-                      Sign out
-                    </a>
-                  </li>
+                  {SORTLABELS.map((label, index) => (
+                    <li key={index}>
+                      <button
+                        className="block w-full px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                        onClick={handleDropdownClick(index)}
+                      >
+                        {label}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -409,32 +428,30 @@ const Holdings = () => {
           >
             {collectedNfts.length ? (
               <div className=" grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-                {
-                  collectedNfts.map((nft, index) => {
-                    return (
-                      <div
-                        key={index}
-                        className="group relative bg-[#f6f4f0] rounded-lg"
-                      >
-                        <a href={`/nft/${nft.id}`}>
-                          <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
-                            <Image
-                              fill
-                              src={convertIPFSPath(nft.image)}
-                              alt={nft.name}
-                              className="h-full w-full object-cover object-center lg:h-full lg:w-full"
-                            />
+                {collectedNfts.map((nft, index) => {
+                  return (
+                    <div
+                      key={index}
+                      className="group relative bg-[#f6f4f0] rounded-lg"
+                    >
+                      <a href={`/nft/${nft.id}`}>
+                        <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
+                          <Image
+                            fill
+                            src={convertIPFSPath(nft.image)}
+                            alt={nft.name}
+                            className="h-full w-full object-cover object-center lg:h-full lg:w-full"
+                          />
+                        </div>
+                        <div className="p-4 flex justify-between items-center">
+                          <div>
+                            <span>{nft.name}</span> <br />
                           </div>
-                          <div className="p-4 flex justify-between items-center">
-                            <div>
-                              <span>{nft.name}</span> <br />
-                            </div>
-                          </div>
-                        </a>
-                      </div>
-                    );
-                  })
-                }
+                        </div>
+                      </a>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-center py-5">No items found for this search</p>
