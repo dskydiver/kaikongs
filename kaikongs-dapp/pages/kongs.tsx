@@ -66,6 +66,10 @@ const Holdings = () => {
     },
   });
 
+  const [loading, setLoading] = useState(_loadingCollected);
+  const [error, setError] = useState(_errorCollected);
+  const [data, setData] = useState(_dataCollected);
+
   const connectWallet = async () => {
     if (window.ethereum) {
       await window.ethereum.request({
@@ -111,7 +115,7 @@ const Holdings = () => {
 
       switch (id) {
         case 0:
-          const { data, loading, error } = await fetchMore({
+          const { data, loading, error } = await _fetchMoreCollected({
             variables: {
               offset: 0,
               limit: pageSize,
@@ -119,7 +123,8 @@ const Holdings = () => {
               orderBy: "price",
             },
           });
-          setData(data);
+          if (data && data.nfts)
+           setData(data);
           setLoading(loading);
           setError(error);
           break;
@@ -128,7 +133,7 @@ const Holdings = () => {
             data: _data,
             loading: _loading,
             error: _error,
-          } = await fetchMore({
+          } = await _fetchMoreCollected({
             variables: {
               offset: 0,
               limit: pageSize,
@@ -136,7 +141,8 @@ const Holdings = () => {
               orderBy: "price",
             },
           });
-          setData(_data);
+          if (data && data.nfts)
+           setData(_data);
           setLoading(_loading);
           setError(_error);
           break;
@@ -145,7 +151,7 @@ const Holdings = () => {
             data: __data,
             loading: __loading,
             error: __error,
-          } = await fetchMore({
+          } = await _fetchMoreCollected({
             variables: {
               offset: 0,
               limit: pageSize,
@@ -153,7 +159,8 @@ const Holdings = () => {
               orderBy: "date",
             },
           });
-          setData(__data);
+          if (data && data.nfts)
+           setData(__data);
           setLoading(__loading);
           setError(__error);
           break;
