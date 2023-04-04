@@ -10,7 +10,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./interfaces/IKaiKongsNFT.sol";
 import "./interfaces/IKaiKongsFactory.sol";
 
-contract KaiKongsMarketplace is
+contract KaiMarketplace is
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable,
     IERC721ReceiverUpgradeable,
@@ -244,7 +244,12 @@ contract KaiKongsMarketplace is
         IERC721(_nft).transferFrom(address(this), msg.sender, _tokenId);
         delete listNfts[_nft][_tokenId];
 
-        emit CanceledListedNFT(_nft, _tokenId, listedNFT.seller, listedNFT.date);
+        emit CanceledListedNFT(
+            _nft,
+            _tokenId,
+            listedNFT.seller,
+            listedNFT.date
+        );
     }
 
     /**
@@ -270,7 +275,11 @@ contract KaiKongsMarketplace is
 
         for (uint256 i = 0; i < _nfts.length; i++) {
             ListNFT memory listedNft = listNfts[_nfts[i]][_tokenIds[i]];
-            this.buy{value: listedNft.price}(_nfts[i], _tokenIds[i], msg.sender);
+            this.buy{value: listedNft.price}(
+                _nfts[i],
+                _tokenIds[i],
+                msg.sender
+            );
         }
     }
 

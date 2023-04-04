@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 /// @title KaiKong NFT
 /// @author dskydiver
 /// @notice Customizable Royalty NFT
-contract KaiKongs is ERC721Enumerable, Pausable, Ownable {
+contract KaiNFT is ERC721Enumerable, Pausable, Ownable {
     using Counters for Counters.Counter;
     using Strings for uint256;
 
