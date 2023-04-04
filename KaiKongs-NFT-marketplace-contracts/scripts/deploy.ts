@@ -1,85 +1,85 @@
-import { ethers, upgrades } from "hardhat";
+import { ethers, upgrades } from 'hardhat'
 
 async function main() {
-  const [owner, user1, user2] = await ethers.getSigners();
+  const [owner, user1, user2] = await ethers.getSigners()
   let baseURI =
-    "ipfs://bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/";
+    'ipfs://bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/'
   const MarketplaceFactory = await ethers.getContractFactory(
-    "KaiKongsMarketplace"
-  );
-  const KaiKongsF = await ethers.getContractFactory("KaiKongsFactory");
+    'KaiKongsMarketplace'
+  )
+  const KaiKongsF = await ethers.getContractFactory('KaiFactory')
 
-  const kaiKongsFactory = await KaiKongsF.deploy();
-  await kaiKongsFactory.deployed();
-  console.log("Kaikongsfactory is deployed to: ", kaiKongsFactory.address);
+  const kaiKongsFactory = await KaiKongsF.deploy()
+  await kaiKongsFactory.deployed()
+  console.log('Kaikongsfactory is deployed to: ', kaiKongsFactory.address)
 
   const marketplace = await upgrades.deployProxy(MarketplaceFactory, [
-    "10000",
+    '10000',
     owner.address,
     kaiKongsFactory.address,
-  ]);
-  await marketplace.deployed();
+  ])
+  await marketplace.deployed()
 
-  console.log("marketplace is deployed to: ", marketplace.address);
+  console.log('marketplace is deployed to: ', marketplace.address)
 
   await (
     await kaiKongsFactory.createCollection(
-      "KaiKongs",
-      "KK",
+      'KaiKongs',
+      'KK',
       10000,
       owner.address,
-      ethers.utils.parseEther("1"),
+      ethers.utils.parseEther('1'),
       10000,
       baseURI
     )
-  ).wait();
+  ).wait()
 
-  let nftAddress = (await kaiKongsFactory.getUserCollections(owner.address))[0];
-  console.log(nftAddress);
+  let nftAddress = (await kaiKongsFactory.getUserCollections(owner.address))[0]
+  console.log(nftAddress)
 
-  let nft = await ethers.getContractAt("KaiKongs", nftAddress);
+  let nft = await ethers.getContractAt('KaiKongs', nftAddress)
 
-  await (await nft.mint(owner.address, 10)).wait();
+  await (await nft.mint(owner.address, 10)).wait()
 
-  await (await nft.approve(marketplace.address, 1)).wait();
-  await (await nft.approve(marketplace.address, 2)).wait();
-  await(await nft.approve(marketplace.address, 3)).wait();
-  await(await nft.approve(marketplace.address, 4)).wait();
+  await (await nft.approve(marketplace.address, 1)).wait()
+  await (await nft.approve(marketplace.address, 2)).wait()
+  await (await nft.approve(marketplace.address, 3)).wait()
+  await (await nft.approve(marketplace.address, 4)).wait()
 
   await (
     await marketplace.createSell(
       nftAddress,
       1,
-      ethers.utils.parseEther("3"),
+      ethers.utils.parseEther('3'),
       owner.address
     )
-  ).wait();
+  ).wait()
   await (
     await marketplace.createSell(
       nftAddress,
       2,
-      ethers.utils.parseEther("4"),
+      ethers.utils.parseEther('4'),
       owner.address
     )
-  ).wait();
+  ).wait()
   await (
     await marketplace.createSell(
       nftAddress,
       3,
-      ethers.utils.parseEther("3"),
+      ethers.utils.parseEther('3'),
       owner.address
     )
-  ).wait();
+  ).wait()
   await (
     await marketplace.createSell(
       nftAddress,
       4,
-      ethers.utils.parseEther("4"),
+      ethers.utils.parseEther('4'),
       owner.address
     )
-  ).wait();
+  ).wait()
 
-  console.log("========================");
+  console.log('========================')
   // await (
   //   await marketplace
   //     .connect(user1)
@@ -93,18 +93,18 @@ async function main() {
 
   await (
     await marketplace.connect(user1).bulkBuy([nftAddress, nftAddress], [1, 2], {
-      value: ethers.utils.parseEther("7"),
+      value: ethers.utils.parseEther('7'),
     })
-  ).wait();
+  ).wait()
 
-  console.log(await nft.balanceOf(marketplace.address));
-  console.log(await nft.balanceOf(owner.address));
-  console.log(await nft.balanceOf(user1.address));
+  console.log(await nft.balanceOf(marketplace.address))
+  console.log(await nft.balanceOf(owner.address))
+  console.log(await nft.balanceOf(user1.address))
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+  console.error(error)
+  process.exitCode = 1
+})

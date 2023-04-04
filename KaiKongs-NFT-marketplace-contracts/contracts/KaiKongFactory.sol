@@ -6,7 +6,7 @@ import "./KaiKongs.sol";
 /// @title KaiKongs Factory
 /// @author dskydiver
 /// @notice users can create new collections
-contract KaiKongsFactory {
+contract KaiFactory {
     mapping(address => address[]) public nfts;
 
     mapping(address => bool) private _KaikongsNFT;
@@ -22,7 +22,7 @@ contract KaiKongsFactory {
         uint256 _maxSupply,
         string memory baseURI_
     ) external {
-        KaiKongs nft = new KaiKongs(
+        KaiNFT nft = new KaiNFT(
             _name,
             _symbol,
             msg.sender,

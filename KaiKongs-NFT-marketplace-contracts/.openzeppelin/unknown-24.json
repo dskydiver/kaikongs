@@ -1,0 +1,401 @@
+{
+  "manifestVersion": "3.2",
+  "proxies": [
+    {
+      "address": "0x0963A32d17581C45d1BdB5Df66940E5255d2B423",
+      "txHash": "0x3fa80875900c5fc922b27d20462fce78cf075faebdecbd8c799c262fe365a86a",
+      "kind": "uups"
+    },
+    {
+      "address": "0x1b8B9065228711425AD2b5bf5ce8119fE066b9a3",
+      "txHash": "0xeedc96011e22f2237d2681b52c3c23a1747877946a58ab608a50823ada16a917",
+      "kind": "uups"
+    },
+    {
+      "address": "0x6260ceA845838F5C3D26eca8fd4324e8C55E453F",
+      "txHash": "0x394e3e73daf15a4d1fda536c96413f96445ff02be70812be5c7688856cb28195",
+      "kind": "uups"
+    },
+    {
+      "address": "0x96972fcE75949fB07ABDF4E394690EFf6422c524",
+      "txHash": "0x3e4f0a03f8165b7c710f28895f15c67c0089cb8a365bee50c3a45ad2ae77e64c",
+      "kind": "uups"
+    },
+    {
+      "address": "0x7f9Fd5072CaC7A47f1e595d1b4fa816c068CDff0",
+      "txHash": "0x1480ba667fc300b598be926ec4a3d90d9bf5c64f3c8135c2634a82a3e9e96af3",
+      "kind": "uups"
+    },
+    {
+      "address": "0x7eA8A40338E1e3715E52984C2E4C75E86aB1e200",
+      "txHash": "0xeb66716c1e5199773909c4dcd758cd0728edc9032ed1da50b3c9f91cd775bc71",
+      "kind": "uups"
+    }
+  ],
+  "impls": {
+    "e9020a213220c18e799ffe3eebbdc6f6ee9d8863f1a4b748a7eda14c058212f5": {
+      "address": "0x10Ae01d3B3A48F33D841DA0dF586DC1d87c285d8",
+      "txHash": "0x235df9ca0d9f6084adaabd0c9b966e5cb822b84a0959924e2d93319f9c77fb66",
+      "layout": {
+        "solcVersion": "0.8.18",
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\security\\ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\security\\ReentrancyGuardUpgradeable.sol:80"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ERC1967UpgradeUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\ERC1967\\ERC1967UpgradeUpgradeable.sol:211"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "UUPSUpgradeable",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\UUPSUpgradeable.sol:107"
+          },
+          {
+            "label": "kaiKongsFactory",
+            "offset": 0,
+            "slot": "251",
+            "type": "t_contract(IKaiKongsFactory)5236",
+            "contract": "KaiKongsMarketplace",
+            "src": "contracts\\marketplace.sol:19"
+          },
+          {
+            "label": "platformFee",
+            "offset": 0,
+            "slot": "252",
+            "type": "t_uint256",
+            "contract": "KaiKongsMarketplace",
+            "src": "contracts\\marketplace.sol:21"
+          },
+          {
+            "label": "feeRecipient",
+            "offset": 0,
+            "slot": "253",
+            "type": "t_address",
+            "contract": "KaiKongsMarketplace",
+            "src": "contracts\\marketplace.sol:22"
+          },
+          {
+            "label": "listNfts",
+            "offset": 0,
+            "slot": "254",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(ListNFT)5287_storage))",
+            "contract": "KaiKongsMarketplace",
+            "src": "contracts\\marketplace.sol:57"
+          },
+          {
+            "label": "offerNfts",
+            "offset": 0,
+            "slot": "255",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(OfferNFT)5300_storage)))",
+            "contract": "KaiKongsMarketplace",
+            "src": "contracts\\marketplace.sol:60"
+          },
+          {
+            "label": "auctionNfts",
+            "offset": 0,
+            "slot": "256",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(AuctionNFT)5323_storage))",
+            "contract": "KaiKongsMarketplace",
+            "src": "contracts\\marketplace.sol:64"
+          },
+          {
+            "label": "bidPrices",
+            "offset": 0,
+            "slot": "257",
+            "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_mapping(t_address,t_uint256)))",
+            "contract": "KaiKongsMarketplace",
+            "src": "contracts\\marketplace.sol:67"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IKaiKongsFactory)5236": {
+            "label": "contract IKaiKongsFactory",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(OfferNFT)5300_storage)))": {
+            "label": "mapping(address => mapping(uint256 => mapping(address => struct KaiKongsMarketplace.OfferNFT)))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_struct(AuctionNFT)5323_storage))": {
+            "label": "mapping(address => mapping(uint256 => struct KaiKongsMarketplace.AuctionNFT))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_struct(ListNFT)5287_storage))": {
+            "label": "mapping(address => mapping(uint256 => struct KaiKongsMarketplace.ListNFT))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(OfferNFT)5300_storage)": {
+            "label": "mapping(address => struct KaiKongsMarketplace.OfferNFT)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_struct(OfferNFT)5300_storage))": {
+            "label": "mapping(uint256 => mapping(address => struct KaiKongsMarketplace.OfferNFT))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_uint256,t_mapping(t_address,t_uint256)))": {
+            "label": "mapping(uint256 => mapping(uint256 => mapping(address => uint256)))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(AuctionNFT)5323_storage)": {
+            "label": "mapping(uint256 => struct KaiKongsMarketplace.AuctionNFT)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(ListNFT)5287_storage)": {
+            "label": "mapping(uint256 => struct KaiKongsMarketplace.ListNFT)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(AuctionNFT)5323_storage": {
+            "label": "struct KaiKongsMarketplace.AuctionNFT",
+            "members": [
+              {
+                "label": "nft",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "tokenId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "creator",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "initialPrice",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "minBid",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "startTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "endTime",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "6"
+              },
+              {
+                "label": "lastBidder",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "7"
+              },
+              {
+                "label": "heighestBid",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "8"
+              },
+              {
+                "label": "winner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "9"
+              },
+              {
+                "label": "success",
+                "type": "t_bool",
+                "offset": 20,
+                "slot": "9"
+              }
+            ],
+            "numberOfBytes": "320"
+          },
+          "t_struct(ListNFT)5287_storage": {
+            "label": "struct KaiKongsMarketplace.ListNFT",
+            "members": [
+              {
+                "label": "nft",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "tokenId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "seller",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "price",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "date",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "sold",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "5"
+              }
+            ],
+            "numberOfBytes": "192"
+          },
+          "t_struct(OfferNFT)5300_storage": {
+            "label": "struct KaiKongsMarketplace.OfferNFT",
+            "members": [
+              {
+                "label": "nft",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "tokenId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "offerer",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "offerPrice",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "date",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "accepted",
+                "type": "t_bool",
+                "offset": 0,
+                "slot": "5"
+              }
+            ],
+            "numberOfBytes": "192"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}
