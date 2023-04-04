@@ -378,7 +378,27 @@ const Holdings = () => {
                   key={index}
                   className="group relative bg-gray-100 rounded-lg"
                 >
-                  
+                  <a href={`/nft/${listedNft.nft.id}`}>
+                    <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
+                      <Image
+                        fill
+                        src={convertIPFSPath(listedNft.nft.image)}
+                        alt={listedNft.nft.name}
+                        className="h-full w-full object-cover object-center lg:h-full lg:w-full"
+                      />
+                    </div>
+                    <div className="p-4 flex justify-between items-center">
+                      <div>
+                        <span>{listedNft.name}</span> <br />
+                      </div>
+                      <span className="text-sm">
+                        {listedNft.price.length > 5
+                          ? `${listedNft.price}`.slice(0, 5) + ".."
+                          : listedNft.price}{" "}
+                        KAI
+                      </span>
+                    </div>
+                  </a>
                 </div>
               ))}
           </div>

@@ -18,8 +18,9 @@ const NftQuery = gql`
   query nft($id: ID) {
     nft(id: $id) {
       id
-      listNFTs(where: { sold: false }) {
+      listNFTs(where: { canceled: false, sold: false }) {
         sold
+        canceled
         price
         id
         date

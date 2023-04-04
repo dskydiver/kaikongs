@@ -343,9 +343,17 @@ export function handleAcceptedNFT(event: AcceptedNFTEvent): void {
 
 export function handleCenceledListedNFT(event: CanceledListedNFTEvent): void {
   let marketplace = Marketplace.bind(dataSource.address());
-  let listedNFT = marketplace.try_getListedNFT(event.params.nft, event.params.tokenId);
+  let listedNFT = marketplace.try_getListedNFT(
+    event.params.nft,
+    event.params.tokenId
+  );
 
-  let nft = NFT.load(generateId([event.params.nft.toHexString(), event.params.tokenId.toString()]));
+  let nft = NFT.load(
+    generateId([
+      event.params.nft.toHexString(),
+      event.params.tokenId.toString(),
+    ])
+  );
 
   if (nft) {
     if (!listedNFT.reverted) {
@@ -353,13 +361,14 @@ export function handleCenceledListedNFT(event: CanceledListedNFTEvent): void {
         generateId([
           event.params.nft.toHexString(),
           event.params.tokenId.toString(),
-          listedNFT.value.seller.toHexString(),
-          listedNFT.value.date.toString()
+          event.params.seller.toHexString(),
+          event.params.date.toString(),
         ])
       );
+
       if (listNFT) {
         listNFT.canceled = true;
-        listNFT.save()
+        listNFT.save();
       }
     }
   }

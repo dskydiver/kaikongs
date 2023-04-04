@@ -78,7 +78,8 @@ contract KaiKongsMarketplace is
     event CanceledListedNFT(
         address indexed nft,
         uint256 indexed tokenId,
-        address indexed seller
+        address indexed seller,
+        uint256 date
     );
     event BoughtNFT(
         address indexed nft,
@@ -243,7 +244,7 @@ contract KaiKongsMarketplace is
         IERC721(_nft).transferFrom(address(this), msg.sender, _tokenId);
         delete listNfts[_nft][_tokenId];
 
-        emit CanceledListedNFT(_nft, _tokenId, listedNFT.seller);
+        emit CanceledListedNFT(_nft, _tokenId, listedNFT.seller, listedNFT.date);
     }
 
     /**

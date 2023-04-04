@@ -125,6 +125,12 @@
         "internalType": "address",
         "name": "seller",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "date",
+        "type": "uint256"
       }
     ],
     "name": "CanceledListedNFT",
