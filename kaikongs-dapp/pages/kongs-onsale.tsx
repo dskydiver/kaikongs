@@ -43,7 +43,7 @@ const SaleQuery = gql`
 
 const Holdings = () => {
   const pageSize = useMemo(() => {
-    return 1;
+    return 2;
   }, []);
 
   const [wallet, setWallet] = useState();

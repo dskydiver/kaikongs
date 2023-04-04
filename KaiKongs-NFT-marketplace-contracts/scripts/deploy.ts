@@ -39,10 +39,12 @@ async function main() {
 
   let nft = await ethers.getContractAt("KaiKongs", nftAddress);
 
-  await (await nft.mint(owner.address, 3)).wait();
+  await (await nft.mint(owner.address, 10)).wait();
 
   await (await nft.approve(marketplace.address, 1)).wait();
   await (await nft.approve(marketplace.address, 2)).wait();
+  await(await nft.approve(marketplace.address, 3)).wait();
+  await(await nft.approve(marketplace.address, 4)).wait();
 
   await (
     await marketplace.createSell(
@@ -60,6 +62,22 @@ async function main() {
       owner.address
     )
   ).wait();
+  await (
+    await marketplace.createSell(
+      nftAddress,
+      3,
+      ethers.utils.parseEther("3"),
+      owner.address
+    )
+  ).wait();
+  await (
+    await marketplace.createSell(
+      nftAddress,
+      4,
+      ethers.utils.parseEther("4"),
+      owner.address
+    )
+  ).wait();
 
   console.log("========================");
   // await (
@@ -69,19 +87,19 @@ async function main() {
   // ).wait();
   // await (
   //   await marketplace
-  //     .connect(user2)
+  //     .connect(user1)
   //     .buy(nftAddress, 2, { value: ethers.utils.parseEther("4") })
   // ).wait();
 
-  // await (
-  //   await marketplace.connect(user1).bulkBuy([nftAddress, nftAddress], [1, 2], {
-  //     value: ethers.utils.parseEther("7"),
-  //   })
-  // ).wait();
+  await (
+    await marketplace.connect(user1).bulkBuy([nftAddress, nftAddress], [1, 2], {
+      value: ethers.utils.parseEther("7"),
+    })
+  ).wait();
 
-  console.log(await nft.balanceOf(marketplace.address))
+  console.log(await nft.balanceOf(marketplace.address));
   console.log(await nft.balanceOf(owner.address));
-  console.log(await nft.balanceOf(user1.address))
+  console.log(await nft.balanceOf(user1.address));
 }
 
 // We recommend this pattern to be able to use async/await everywhere

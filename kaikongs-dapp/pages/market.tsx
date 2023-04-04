@@ -59,7 +59,7 @@ const ListedNftsQuery = gql`
 const Holdings = () => {
   // console.log(itemsListed);
   const pageSize = useMemo(() => {
-    return 1
+    return 2
   }, [])
 
   const { data: _data, loading: _loading, error: _error, fetchMore } = useQuery(ListedNftsQuery, {

@@ -41,7 +41,7 @@ const CollectedNftsQuery = gql`
 
 const Holdings = () => {
   const pageSize = useMemo(() => {
-    return 1;
+    return 2;
   }, []);
   const [avatar, setAvatar] = useState("/avatar.png");
   const [wallet, setWallet] = useState("");
