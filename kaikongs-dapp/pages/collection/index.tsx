@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery, gql } from "@apollo/client";
 import { Button, Modal, Label, TextInput } from "flowbite-react";
-import factoryABI from "../utils/factory-abi.json";
+import factoryABI from "../../utils/factory-abi.json";
 import { ethers } from "ethers";
-import Validate, { CollectionDataType } from "../utils/validateCollectionData";
+import Validate, { CollectionDataType } from "../../utils/validateCollectionData";
 
 declare var window: any;
 
@@ -23,7 +23,7 @@ const MyCollectionsQuery = gql`
   }
 `;
 
-export default function Collection() {
+export default function Collections() {
   
   const [isOpen, setIsOpen] = useState(false);
   const [wallet, setWallet] = useState("");
@@ -325,25 +325,33 @@ export default function Collection() {
         ) : (
           <></>
         )}
-        <table className="border-collapse border border-slate-400 w-full">
-          <thead>
+        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
-              <th>Id</th>
-              <th>Name</th>
-              <th>Symbol</th>
-              <th>MintPrice</th>
-              <th>MaxSupply</th>
+              <th scope="col" className="px-6 py-3">Id</th>
+              <th scope="col" className="px-6 py-3">Name</th>
+              <th scope="col" className="px-6 py-3">Symbol</th>
+              <th scope="col" className="px-6 py-3">MintPrice</th>
+              <th scope="col" className="px-6 py-3">MaxSupply</th>
             </tr>
           </thead>
           <tbody>
             {data?.nftcollections?.map((collection, index) => {
               return (
-                <tr key={index}>
-                  <td>{collection.id}</td>
-                  <td>{collection.name}</td>
-                  <td>{collection.symbol}</td>
-                  <td>{collection.mintPrice}</td>
-                  <td>{collection.maxSupply}</td>
+                <tr
+                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
+                  key={index}
+                >
+                  <td
+                    scope="row"
+                    className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                  >
+                    <a href={`/collection/${collection.id}`}>{collection.id}</a>
+                  </td>
+                  <td className="px-6 py-4">{collection.name}</td>
+                  <td className="px-6 py-4">{collection.symbol}</td>
+                  <td className="px-6 py-4">{collection.mintPrice}</td>
+                  <td className="px-6 py-4">{collection.maxSupply}</td>
                 </tr>
               );
             })}
