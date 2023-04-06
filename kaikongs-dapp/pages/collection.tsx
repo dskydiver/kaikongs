@@ -1,4 +1,11 @@
+import { useState, useEffect } from "react";
 import { useQuery, gql } from "@apollo/client";
+import { Button, Modal, Label, TextInput } from "flowbite-react";
+import factoryABI from "../utils/factory-abi.json";
+import { ethers } from "ethers";
+import Validate, { CollectionDataType } from "../utils/validateCollectionData";
+
+declare var window: any;
 
 const MyCollectionsQuery = gql`
   query MyCollecitonsQuery($address: String) {
@@ -17,8 +24,137 @@ const MyCollectionsQuery = gql`
 `;
 
 export default function Collection() {
-  const { data, loading, error, fetchMore } = useQuery(MyCollectionsQuery);
-  const handleCreateCollection = () => {};
+  
+  const [isOpen, setIsOpen] = useState(false);
+  const [wallet, setWallet] = useState("");
+  const [collectionData, setCollectionData] = useState<CollectionDataType>({
+    name: "",
+    symbol: "",
+    maxSupply: 0,
+    mintPrice: 0,
+    baseURI: "",
+    royaltyFee: 0,
+    royaltyRecipient: "",
+  });
+
+  const { data: _data, loading: _loading, error: _error, fetchMore: _fetchMore } = useQuery(MyCollectionsQuery, {
+    variables: {
+      address: wallet.toLocaleLowerCase(),
+    },
+  });
+
+  const [data, setData] = useState(_data)
+  const [loading, setLoading] = useState(_loading);
+  const [error, setError] = useState(_error);
+
+  const handleCreateCollection = async () => {
+    setIsOpen(false);
+    let provider = new ethers.providers.Web3Provider(window.ethereum);
+    let factory = new ethers.Contract(
+      process.env.NEXT_PUBLIC_FACTORY_CONTRACT_ADDRESS,
+      factoryABI,
+      provider.getSigner()
+    );
+
+    let { isValidated, errors } = Validate(collectionData);
+    if (isValidated) {
+      let {
+        name,
+        symbol,
+        maxSupply,
+        mintPrice,
+        royaltyFee,
+        royaltyRecipient,
+        baseURI,
+      } = collectionData;
+      try {
+        console.log(royaltyFee)
+        console.log(ethers.utils.parseEther(royaltyFee.toString()))
+        await (
+          await factory.createCollection(
+            name,
+            symbol,
+            ethers.utils.parseEther(royaltyFee.toString()),
+            royaltyRecipient,
+            ethers.utils.parseEther(mintPrice.toString()),
+            maxSupply,
+            baseURI, 
+            {
+              from: wallet
+            }
+          )
+        ).wait();
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  };
+
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      let wallet = "";
+      try {
+        wallet = await provider.getSigner().getAddress();
+        setWallet(wallet);
+      } catch (err) {}
+    } else {
+      window.open("https://metamask.io/", "_blank");
+    }
+  };
+
+  async function getCurrentWallet(): Promise<void> {
+    if (window.ethereum) {
+      await window.ethereum.request({
+        method: "eth_accounts",
+      });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      let wallet = "";
+      try {
+        wallet = await provider.getSigner().getAddress();
+        setWallet(wallet);
+      } catch (err) {}
+      // console.log(account);
+    }
+  }
+
+  const walletListener = () => {
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", (accounts) => {
+        // console.log(accounts[0]);
+        setWallet(accounts[0]);
+      });
+    }
+  };
+
+  const handleValueChange = (name: string) => (e) => {
+    setCollectionData({
+      ...collectionData,
+      [name]: e.target.value,
+    });
+  };
+
+  useEffect(() => {
+    getCurrentWallet();
+    walletListener();
+  }, []);
+
+  useEffect(() => {
+    _fetchMore({
+      variables: {
+        address: wallet.toLowerCase()
+      }
+    })
+    .then(({data, loading, error}) => {
+      setData(data)
+      setLoading(loading)
+      setError(error)
+    })
+    .catch(err => console.log(err))
+  }, [_fetchMore, wallet])
 
   if (loading) {
     return (
@@ -36,14 +172,159 @@ export default function Collection() {
       <div className="top__bar cover__pg w-full text-center bg-gray-200 py-2 min-h-[20rem]"></div>
       <div className="mx-auto max-w-2xl px-4 pt-5 sm:px-6 lg:max-w-7xl lg:px-8">
         <p className="text-4xl mb-5">My Collections</p>
-        <button
-          data-modal-target="defaultModal"
-          data-modal-toggle="defaultModal"
-          className="block text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-          type="button"
-        >
-          Create a Collection
-        </button>
+        {wallet ? (
+          !isOpen ? (
+            <Button className="mb-5" onClick={() => setIsOpen(true)}>
+              Create a Collection
+            </Button>
+          ) : (
+            <></>
+          )
+        ) : (
+          <button
+            onClick={connectWallet}
+            className="flex mb-5 justify-center gap-x-4 items-center bg-[#44912d] text-white hover:bg-[sky-700] font-bold py-2 px-4 rounded-lg inline-flex"
+          >
+            {" "}
+            Connect <img
+              src="/metamask.png"
+              width="30"
+              alt="metamask icon"
+            />{" "}
+          </button>
+        )}
+
+        {isOpen ? (
+          <div>
+            <p>Create a Collection</p>
+            <div>
+              <div className="py-6 space-y-6">
+                <div className="mb-6">
+                  <label
+                    htmlFor="default-input"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    id="default-input"
+                    required
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    value={collectionData.name}
+                    onChange={handleValueChange("name")}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label
+                    htmlFor="default-input"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Symbol
+                  </label>
+                  <input
+                    type="text"
+                    id="default-input"
+                    required
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    value={collectionData.symbol}
+                    onChange={handleValueChange("symbol")}
+                  />
+                </div>
+                <div className="mb-6">
+                  <label
+                    htmlFor="default-input"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Max Supply
+                  </label>
+                  <input
+                    type="number"
+                    id="default-input"
+                    required
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    value={collectionData.maxSupply}
+                    onChange={handleValueChange("maxSupply")}
+                  />
+                </div>
+                <div className="mb-6">
+                  <label
+                    htmlFor="default-input"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Mint Price (KAI)
+                  </label>
+                  <input
+                    type="number"
+                    id="default-input"
+                    required
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    value={collectionData.mintPrice}
+                    onChange={handleValueChange("mintPrice")}
+                  />
+                </div>
+                <div className="mb-6">
+                  <label
+                    htmlFor="default-input"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    BaseURI
+                  </label>
+                  <input
+                    type="text"
+                    id="default-input"
+                    required
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    placeholder="ipfs://"
+                    value={collectionData.baseURI}
+                    onChange={handleValueChange("baseURI")}
+                  />
+                </div>
+                <div className="mb-6">
+                  <label
+                    htmlFor="default-input"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Royalty Fee (KAI)
+                  </label>
+                  <input
+                    type="number"
+                    id="default-input"
+                    required
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    value={collectionData.royaltyFee}
+                    onChange={handleValueChange("royaltyFee")}
+                  />
+                </div>
+                <div className="mb-6">
+                  <label
+                    htmlFor="default-input"
+                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Royalty Recipient
+                  </label>
+                  <input
+                    type="text"
+                    id="default-input"
+                    required
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    value={collectionData.royaltyRecipient}
+                    onChange={handleValueChange("royaltyRecipient")}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex space-x-2 mb-5">
+              <Button onClick={handleCreateCollection}>Create</Button>
+              <Button color="gray" onClick={() => setIsOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <></>
+        )}
         <table className="border-collapse border border-slate-400 w-full">
           <thead>
             <tr>
@@ -68,75 +349,6 @@ export default function Collection() {
             })}
           </tbody>
         </table>
-      </div>
-
-      <div
-        id="defaultModal"
-        tabIndex={-1}
-        aria-hidden="true"
-        className="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] md:h-full"
-      >
-        <div className="relative w-full h-full max-w-2xl md:h-auto">
-          <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
-            <div className="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Terms of Service
-              </h3>
-              <button
-                type="button"
-                className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
-                data-modal-hide="defaultModal"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fill-rule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clip-rule="evenodd"
-                  ></path>
-                </svg>
-                <span className="sr-only">Close modal</span>
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <p className="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-                With less than a month to go before the European Union enacts
-                new consumer privacy laws for its citizens, companies around the
-                world are updating their terms of service agreements to comply.
-              </p>
-              <p className="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-                The European Union’s General Data Protection Regulation
-                (G.D.P.R.) goes into effect on May 25 and is meant to ensure a
-                common set of data rights in the European Union. It requires
-                organizations to notify users as soon as possible of high-risk
-                data breaches that could personally affect them.
-              </p>
-            </div>
-
-            <div className="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-              <button
-                data-modal-hide="defaultModal"
-                type="button"
-                className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-              >
-                I accept
-              </button>
-              <button
-                data-modal-hide="defaultModal"
-                type="button"
-                className="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600"
-              >
-                Decline
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
