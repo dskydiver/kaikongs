@@ -14,12 +14,12 @@ async function main() {
     'ipfs://bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/'
   const baseURI_KaiCats =
     'ipfs://QmRxpxYadHiLb57tpot51wKgYNpKEoEzru2r17rMA2BPmj/'
-  const factoryAddress = '0xe5506ac8682a58Ed7Af3cA77F255aaA792C4406f'
-  const marketAddress = '0x4990D84AEcdB87c64A8a4Ef6D87dB74C63B99713'
+  const factoryAddress = '0x031CeD68f8b34F55E79822B735d125A183f9a004'
+  const marketAddress = '0x338CEbcE3B1F041bB85c3256B0688118c3FD02e5'
   const oldKaiKongsAddress = '0xe83a69C8CD50d681895602ACdEC81F7847E70fde'
   const oldMarketAddress = '0xC595e0D9dd590c82F415c00A770755a5D3B626BC'
-  const KKAddress = '0x4EaBa3290f06233aa9D780B77A6DA486aB425c1f'
-  const KCAddress = '0xE783625703A1FC7AF847C0dc50acce2F8863Db24'
+  const KKAddress = '0x4DcB45bF5c40B1aEf707AA10633012fB9e48bD41'
+  const KCAddress = '0x966bd7F1eC883bDFBfBd611C2D5d688e8f3De59F'
   // const factory = await ethers.getContractAt('KaiFactory', factoryAddress)
   // const market = await ethers.getContractAt('KaiMarketplace', marketAddress)
   const oldMarket = await ethers.getContractAt(

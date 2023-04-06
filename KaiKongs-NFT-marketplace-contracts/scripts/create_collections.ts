@@ -6,8 +6,8 @@ async function main() {
   let baseURI_KaiKongs =
     'ipfs://bafybeicc7qf4nu6scvwse7xt3g3uadcmf2t467qus75arezj3m57ei4qvq/'
   let baseURI_KaiCats = 'ipfs://QmRxpxYadHiLb57tpot51wKgYNpKEoEzru2r17rMA2BPmj/'
-  let factoryAddress = '0xe5506ac8682a58Ed7Af3cA77F255aaA792C4406f'
-  let marketAddress = '0x4990D84AEcdB87c64A8a4Ef6D87dB74C63B99713'
+  let factoryAddress = '0x031CeD68f8b34F55E79822B735d125A183f9a004'
+  let marketAddress = '0x338CEbcE3B1F041bB85c3256B0688118c3FD02e5'
   let factory = await ethers.getContractAt('KaiFactory', factoryAddress)
   let market = await ethers.getContractAt('KaiMarketplace', marketAddress)
 
