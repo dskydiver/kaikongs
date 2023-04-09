@@ -24,8 +24,22 @@ nav {
 
 .cover__pg {
   background-image: url('/cover.jpeg');
+  background-repeat: repeat-x;
+  background-size: contain;
+  /* background-position-y: -10rem; */
+}
+
+.KK {
+  background-image: url('/kk-banner.jpg');
   background-repeat: no-repeat;
   background-size: cover;
+  /* background-position-y: -10rem; */
+}
+
+.KC {
+  background-image: url('/kc-banner.jpg');
+  background-repeat: repeat-x;
+  background-size: contain;
   /* background-position-y: -10rem; */
 }
 

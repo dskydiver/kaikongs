@@ -66,8 +66,8 @@ export default function Document() {
               <a href="/" className="mr-5 hover:text-gray-900">
                 Home
               </a>
-              <a href="/market" className="mr-5 hover:text-gray-900">
-                Marketplace
+              <a href="#collections" className="mr-5 hover:text-gray-900">
+                Collections
               </a>
               <a href="/kongs" className="mr-5 hover:text-gray-900">
                 Profile

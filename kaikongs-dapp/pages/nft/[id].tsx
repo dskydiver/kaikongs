@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import { at } from "lodash";
 import { BsArrowDown } from "react-icons/bs";
 import { type } from "os";
-import metadataJSON from "../../public/_metadata_with_rarity.json";
+import kaiKongMetadataJSON from "../../public/_metadata_with_rarity.json";
 import convertIPFSPath from "../../utils/convertIPFSPath";
 import marketplaceABI from "../../utils/marketplace-contract-abi.json";
 import nftContractABI from "../../utils/contract-abi.json";
@@ -44,6 +44,7 @@ const NftQuery = gql`
       collection {
         address
         id
+        baseURI
       }
     }
   }
@@ -65,10 +66,10 @@ const Nft = () => {
   const [error, setError] = useState(_error);
   const [data, setData] = useState(_data);
   const [wallet, setWallet] = useState("");
-  // const [nftTraits, setnftTraits] = useState([]);
+  const [nftTraits, setnftTraits] = useState([]);
   // const [imageUrl, setImageUrl] = useState<any | null>(null);
   // const [tokeName, setTokenName] = useState();
-  // const [tokenRank, setTokenRank] = useState();
+  const [tokenRank, setTokenRank] = useState();
 
   const [isListed, setIsListed] = useState(true);
   // const [tokenPrice, setTokenPrice] = useState();
@@ -169,7 +170,7 @@ const Nft = () => {
           await marketplace.createSell(
             nftContractAddress,
             tokenId,
-            price,
+            ethers.utils.parseEther(price),
             wallet,
             { from: wallet }
           )
@@ -268,8 +269,13 @@ const Nft = () => {
 
   const transferToken = async () => {
     setProcessing(true);
+    let provider = new ethers.providers.Web3Provider(window.ethereum);
     let nftContractAddress = data.nft.collection.address;
-    let nftContract = new ethers.Contract(nftContractAddress, nftContractABI);
+    let nftContract = new ethers.Contract(
+      nftContractAddress,
+      nftContractABI,
+      provider.getSigner()
+    );
     try {
       await (
         await nftContract.transferFrom(wallet, recipient, id, { from: wallet })
@@ -282,6 +288,57 @@ const Nft = () => {
       setProcessing(false);
     }
   };
+
+  const fetchMetaData = (nft) => {
+    if (nft.collection.id === "0x4dcb45bf5c40b1aef707aa10633012fb9e48bd41") {
+      const nftMeta = kaiKongMetadataJSON.find(
+        (meta) => +meta.edition === +nft.name.split("#")[1]
+      );
+
+      setTokenRank(nftMeta.rank);
+
+      setnftTraits([]);
+
+      nftMeta.attributes.map((attr: any) => {
+        setnftTraits((nftTraits) => [...nftTraits, attr]);
+      });
+    }
+    const baseURI = nft.collection.baseURI;
+    console.log(
+      process.env.NEXT_PUBLIC_FILEBASE_IPFS_ENDPOINT +
+        baseURI.split("ipfs://")[1] +
+        "/_metadata_with_rarity.json"
+    );
+    fetch(
+      process.env.NEXT_PUBLIC_FILEBASE_IPFS_ENDPOINT +
+        baseURI.split("ipfs://")[1] +
+        "_metadata_with_rarity.json"
+    )
+      .then(async (response) => {
+        const metaDataJson = await response.json();
+        const nftMeta = metaDataJson.find(
+          (meta) => meta.name === nft.name
+        );
+
+        setTokenRank(nftMeta.rank);
+
+        setnftTraits([]);
+
+        nftMeta.attributes.map((attr: any) => {
+          setnftTraits((nftTraits) => [...nftTraits, attr]);
+        });
+      })
+      .catch(console.log);
+  };
+
+  function sentenceCase(str) {
+    if (str === null || str === "") return false;
+    else str = str.toString();
+
+    return str.replace(/\w\S*/g, function (txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
+  }
 
   useEffect(() => {
     getCurrentWallet();
@@ -297,17 +354,20 @@ const Nft = () => {
           setIsOwner(false);
         }
       } else {
-        if (compareAddress(wallet, data?.nft?.owner.address)) {
+        if (data && data.nft && compareAddress(wallet, data?.nft?.owner.address)) {
           setIsOwner(true);
         } else {
           setIsOwner(false);
         }
       }
     }
-  }, [wallet, loading, error, data?.nft?.owner.address, data?.nft?.listNFTs]);
+  }, [wallet, loading, error, data?.nft?.owner.address, data?.nft?.listNFTs, data]);
 
   useEffect(() => {
     setData(_data);
+    if (_data && _data.nft) {
+      fetchMetaData(_data.nft);
+    }
   }, [_data]);
 
   useEffect(() => {
@@ -354,6 +414,7 @@ const Nft = () => {
               <h1 className="text-gray-900 text-3xl title-font font-medium mb-1">
                 {nft.name}
               </h1>
+              <span>- Rank #{tokenRank}</span>
             </div>
             <span className="text-sm">
               owned by {`${nft.owner.address}`.slice(0, 5) + ".."}
@@ -501,7 +562,7 @@ const Nft = () => {
                     </h2>
                   </summary>
 
-                  {/* <div className="flex flex-wrap mt-3 gap-4">
+                  <div className="flex flex-wrap mt-3 gap-4">
                     {nftTraits.map((attr, index) => (
                       <div
                         key={index}
@@ -511,7 +572,7 @@ const Nft = () => {
                         <span>{sentenceCase(attr.value)}</span>
                       </div>
                     ))}
-                  </div> */}
+                  </div>
                 </details>
               </div>
             </div>

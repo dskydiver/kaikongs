@@ -15,7 +15,7 @@ declare var window: any;
 const SaleQuery = gql`
   query listNFTs($address: String, $offset: Int, $limit: Int) {
     listNFTs(
-      where: { seller_: { address: $address }, sold: false }
+      where: { seller_: { address: $address }, sold: false, canceled: false }
       skip: $offset
       first: $limit
     ) {

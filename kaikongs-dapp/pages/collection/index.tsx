@@ -3,7 +3,9 @@ import { useQuery, gql } from "@apollo/client";
 import { Button, Modal, Label, TextInput } from "flowbite-react";
 import factoryABI from "../../utils/factory-abi.json";
 import { ethers } from "ethers";
-import Validate, { CollectionDataType } from "../../utils/validateCollectionData";
+import Validate, {
+  CollectionDataType,
+} from "../../utils/validateCollectionData";
 
 declare var window: any;
 
@@ -24,7 +26,6 @@ const MyCollectionsQuery = gql`
 `;
 
 export default function Collections() {
-  
   const [isOpen, setIsOpen] = useState(false);
   const [wallet, setWallet] = useState("");
   const [collectionData, setCollectionData] = useState<CollectionDataType>({
@@ -37,13 +38,18 @@ export default function Collections() {
     royaltyRecipient: "",
   });
 
-  const { data: _data, loading: _loading, error: _error, fetchMore: _fetchMore } = useQuery(MyCollectionsQuery, {
+  const {
+    data: _data,
+    loading: _loading,
+    error: _error,
+    fetchMore: _fetchMore,
+  } = useQuery(MyCollectionsQuery, {
     variables: {
       address: wallet.toLocaleLowerCase(),
     },
   });
 
-  const [data, setData] = useState(_data)
+  const [data, setData] = useState(_data);
   const [loading, setLoading] = useState(_loading);
   const [error, setError] = useState(_error);
 
@@ -68,22 +74,23 @@ export default function Collections() {
         baseURI,
       } = collectionData;
       try {
-        console.log(royaltyFee)
-        console.log(ethers.utils.parseEther(royaltyFee.toString()))
+        console.log(royaltyFee);
+        console.log(ethers.utils.parseEther(royaltyFee.toString()));
         await (
           await factory.createCollection(
             name,
             symbol,
-            ethers.utils.parseEther(royaltyFee.toString()),
+            royaltyFee.toString(),
             royaltyRecipient,
-            ethers.utils.parseEther(mintPrice.toString()),
+            mintPrice.toString(),
             maxSupply,
-            baseURI, 
+            baseURI,
             {
-              from: wallet
+              from: wallet,
             }
           )
         ).wait();
+        location.reload()
       } catch (err) {
         console.log(err);
       }
@@ -96,6 +103,7 @@ export default function Collections() {
         method: "eth_requestAccounts",
       });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+      console.log('connect')
       let wallet = "";
       try {
         wallet = await provider.getSigner().getAddress();
@@ -108,15 +116,20 @@ export default function Collections() {
 
   async function getCurrentWallet(): Promise<void> {
     if (window.ethereum) {
+      console.log(window.ethereum)
       await window.ethereum.request({
         method: "eth_accounts",
       });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+      console.log(provider)
       let wallet = "";
       try {
         wallet = await provider.getSigner().getAddress();
+        console.log(wallet);
         setWallet(wallet);
-      } catch (err) {}
+      } catch (err) {
+        console.log(err)
+      }
       // console.log(account);
     }
   }
@@ -145,16 +158,16 @@ export default function Collections() {
   useEffect(() => {
     _fetchMore({
       variables: {
-        address: wallet.toLowerCase()
-      }
+        address: wallet.toLowerCase(),
+      },
     })
-    .then(({data, loading, error}) => {
-      setData(data)
-      setLoading(loading)
-      setError(error)
-    })
-    .catch(err => console.log(err))
-  }, [_fetchMore, wallet])
+      .then(({ data, loading, error }) => {
+        setData(data);
+        setLoading(loading);
+        setError(error);
+      })
+      .catch((err) => console.log(err));
+  }, [_fetchMore, wallet]);
 
   if (loading) {
     return (
@@ -328,11 +341,21 @@ export default function Collections() {
         <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
           <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
-              <th scope="col" className="px-6 py-3">Id</th>
-              <th scope="col" className="px-6 py-3">Name</th>
-              <th scope="col" className="px-6 py-3">Symbol</th>
-              <th scope="col" className="px-6 py-3">MintPrice</th>
-              <th scope="col" className="px-6 py-3">MaxSupply</th>
+              <th scope="col" className="px-6 py-3">
+                Id
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Name
+              </th>
+              <th scope="col" className="px-6 py-3">
+                Symbol
+              </th>
+              <th scope="col" className="px-6 py-3">
+                MintPrice
+              </th>
+              <th scope="col" className="px-6 py-3">
+                MaxSupply
+              </th>
             </tr>
           </thead>
           <tbody>

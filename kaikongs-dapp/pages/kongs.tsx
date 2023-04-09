@@ -17,10 +17,10 @@ import {
   faTableCellsLarge,
   faChart,
 } from "@fortawesome/free-solid-svg-icons";
-import { Dropdown } from "flowbite-react";
+import InfiniteScroll from "react-infinite-scroller";
 
 declare var window: any;
-var SORTLABELS = ['Price low to high', 'Price high to low', 'Recently listed']
+var SORTLABELS = ["Price low to high", "Price high to low", "Recently listed"];
 
 const CollectedNftsQuery = gql`
   query nfts($address: String) {
@@ -47,7 +47,7 @@ const Holdings = () => {
   const [wallet, setWallet] = useState("");
   const [collectedNfts, setCollectedNfts] = useState([]);
   const [holdings, setHoldings] = useState([]);
-  const [sortId, setSortId] = useState(0)
+  const [sortId, setSortId] = useState(0);
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -62,7 +62,7 @@ const Holdings = () => {
     variables: {
       offset: 0,
       limit: pageSize,
-      address: wallet.toLowerCase(),
+      address: '0xa00e4e9cc9745385769856326720422a93303807'//wallet.toLowerCase(),
     },
   });
 
@@ -75,12 +75,16 @@ const Holdings = () => {
       await window.ethereum.request({
         method: "eth_requestAccounts",
       });
+      console.log("connect");
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       let wallet = "";
       try {
         wallet = await provider.getSigner().getAddress();
+        console.log(wallet);
         setWallet(wallet);
-      } catch (err) {}
+      } catch (err) {
+        console.log(err);
+      }
     } else {
       window.open("https://metamask.io/", "_blank");
     }
@@ -110,62 +114,59 @@ const Holdings = () => {
     }
   };
 
-    const handleDropdownClick = (id: number) => async () => {
-      setSortId(id);
+  const handleDropdownClick = (id: number) => async () => {
+    setSortId(id);
 
-      switch (id) {
-        case 0:
-          const { data, loading, error } = await _fetchMoreCollected({
-            variables: {
-              offset: 0,
-              limit: pageSize,
-              orderDirection: "asc",
-              orderBy: "price",
-            },
-          });
-          if (data && data.nfts)
-           setData(data);
-          setLoading(loading);
-          setError(error);
-          break;
-        case 1:
-          const {
-            data: _data,
-            loading: _loading,
-            error: _error,
-          } = await _fetchMoreCollected({
-            variables: {
-              offset: 0,
-              limit: pageSize,
-              orderDirection: "desc",
-              orderBy: "price",
-            },
-          });
-          if (data && data.nfts)
-           setData(_data);
-          setLoading(_loading);
-          setError(_error);
-          break;
-        case 2:
-          const {
-            data: __data,
-            loading: __loading,
-            error: __error,
-          } = await _fetchMoreCollected({
-            variables: {
-              offset: 0,
-              limit: pageSize,
-              orderDirection: "desc",
-              orderBy: "date",
-            },
-          });
-          if (data && data.nfts)
-           setData(__data);
-          setLoading(__loading);
-          setError(__error);
-          break;
-      }
-    };
+    switch (id) {
+      case 0:
+        const { data, loading, error } = await _fetchMoreCollected({
+          variables: {
+            offset: 0,
+            limit: pageSize,
+            orderDirection: "asc",
+            orderBy: "price",
+          },
+        });
+        if (data && data.nfts) setData(data);
+        setLoading(loading);
+        setError(error);
+        break;
+      case 1:
+        const {
+          data: _data,
+          loading: _loading,
+          error: _error,
+        } = await _fetchMoreCollected({
+          variables: {
+            offset: 0,
+            limit: pageSize,
+            orderDirection: "desc",
+            orderBy: "price",
+          },
+        });
+        if (data && data.nfts) setData(_data);
+        setLoading(_loading);
+        setError(_error);
+        break;
+      case 2:
+        const {
+          data: __data,
+          loading: __loading,
+          error: __error,
+        } = await _fetchMoreCollected({
+          variables: {
+            offset: 0,
+            limit: pageSize,
+            orderDirection: "desc",
+            orderBy: "date",
+          },
+        });
+        if (data && data.nfts) setData(__data);
+        setLoading(__loading);
+        setError(__error);
+        break;
+    }
+  };
 
   useEffect(() => {
     if (wallet) {
@@ -186,7 +187,7 @@ const Holdings = () => {
         variables: {
           offset: (currentPage - 1) * pageSize,
           limit: pageSize,
-          address: wallet.toLowerCase(),
+          address: "0xa00e4e9cc9745385769856326720422a93303807", //wallet.toLowerCase(),
         },
       })
         .then(({ data, loading, error }) => {
@@ -200,7 +201,7 @@ const Holdings = () => {
 
   useEffect(() => {
     getCurrentWallet();
-    walletListener();
+    // walletListener();
   }, []);
 
   const handlePageChange = (page) => {
@@ -342,7 +343,7 @@ const Holdings = () => {
               type="text"
               id="success"
               className="bg-gray-50 border pl-10 h-full border-gray-500 text-gray-900 dark:text-gray-400 placeholder-gray-700 dark:placeholder-gray-500 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-500"
-              placeholder="Success input"
+              placeholder="Search..."
             />
           </div>
           <div className="pl-2">
@@ -435,30 +436,44 @@ const Holdings = () => {
           >
             {collectedNfts.length ? (
               <div className=" grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-                {collectedNfts.map((nft, index) => {
-                  return (
-                    <div
-                      key={index}
-                      className="group relative bg-[#f6f4f0] rounded-lg"
-                    >
-                      <a href={`/nft/${nft.id}`}>
-                        <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
-                          <Image
-                            fill
-                            src={convertIPFSPath(nft.image)}
-                            alt={nft.name}
-                            className="h-full w-full object-cover object-center lg:h-full lg:w-full"
-                          />
+                {/* <div style="height:700px;overflow:auto;">
+                  <InfiniteScroll
+                    pageStart={0}
+                    loadMore={() => {}}
+                    hasMore={true || false}
+                    loader={
+                      <div className="loader" key={0}>
+                        Loading ...
+                      </div>
+                    }
+                    useWindow={false}
+                  > */}
+                    {collectedNfts.map((nft, index) => {
+                      return (
+                        <div
+                          key={index}
+                          className="group relative bg-[#f6f4f0] rounded-lg"
+                        >
+                          <a href={`/nft/${nft.id}`}>
+                            <div className="relative min-h-80 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-md  lg:aspect-none lg:h-80">
+                              <Image
+                                fill
+                                src={convertIPFSPath(nft.image)}
+                                alt={nft.name}
+                                className="h-full w-full object-cover object-center lg:h-full lg:w-full"
+                              />
+                            </div>
+                            <div className="p-4 flex justify-between items-center">
+                              <div>
+                                <span>{nft.name}</span> <br />
+                              </div>
+                            </div>
+                          </a>
                         </div>
-                        <div className="p-4 flex justify-between items-center">
-                          <div>
-                            <span>{nft.name}</span> <br />
-                          </div>
-                        </div>
-                      </a>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  {/* </InfiniteScroll>
+                </div> */}
               </div>
             ) : (
               <p className="text-center py-5">No items found for this search</p>
